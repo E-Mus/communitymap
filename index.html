@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="de" data-variant="1">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<title>NöMap — wo klebt der Nö?</title>
+<meta name="description" content="Community-Karte: wo wurden Nö-Sticker gesichtet?">
+
+<link rel="icon" href="noe.png">
+<link rel="apple-touch-icon" href="noe.png">
+
+<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css" rel="stylesheet">
+<link href="css/base.css" rel="stylesheet">
+<!-- Wird von variants.js ausgetauscht. Nur die aktive Variante laedt ihre Schriften. -->
+<link href="css/v1.css" rel="stylesheet" id="variant-css">
+</head>
+<body>
+
+<!-- Ladebalken: der Kartenstil ist weiss auf weiss, eine nicht geladene Karte
+     saehe aus wie eine geladene. Deshalb explizites Laden UND explizites Scheitern. -->
+<div class="loadbar" id="loadbar" aria-hidden="true"></div>
+
+<div class="app" id="app" data-mode="map">
+
+  <!-- FEED steht bewusst zuerst im DOM: in allen fuenf Varianten eine
+       vertretbare Lesereihenfolge, und damit stimmt die Tab-Reihenfolge auch
+       dort, wo Grid ihn visuell woanders hinschiebt. -->
+  <aside class="feed" id="feed" aria-label="Sticker-Liste">
+    <header class="feed__head">
+      <h1 class="brand">
+        <img class="noe brand__mark" src="noe.png" alt="Nö" width="851" height="851">
+        <span class="brand__text">map</span>
+      </h1>
+      <button class="iconbtn feed__close" id="feedClose" type="button" aria-label="Liste schliessen">✕</button>
+    </header>
+
+    <div class="search">
+      <input class="search__input" id="searchInput" type="search" placeholder="ort, strasse oder 52.512, 13.453"
+             autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Ort suchen">
+      <ul class="search__results" id="searchResults" role="listbox" hidden></ul>
+    </div>
+
+    <div class="tabs" id="feedTabs" role="tablist">
+      <button class="tab" role="tab" data-tab="neu" aria-selected="true">neu</button>
+      <button class="tab" role="tab" data-tab="top" aria-selected="false">top</button>
+      <button class="tab" role="tab" data-tab="heiss" aria-selected="false">heiss</button>
+      <button class="tab tab--admin" role="tab" data-tab="gemeldet" aria-selected="false" hidden>gemeldet</button>
+    </div>
+
+    <ul class="cards" id="cards" role="listbox" aria-label="Sichtungen"></ul>
+
+    <footer class="feed__foot">
+      <button class="linkbtn" id="adminBtn" type="button">admin</button>
+      <button class="linkbtn" id="variantBtn" type="button">stil <span id="variantNum">1</span>/5</button>
+      <p class="meter" id="meter"></p>
+      <p class="disclaimer">
+        demo ohne server — die vorhandenen sichtungen und ihre likes sind erfunden,
+        deine eigenen liegen nur in diesem browser.
+      </p>
+    </footer>
+  </aside>
+
+  <!-- KARTE -->
+  <main class="mapwrap" id="mapwrap">
+    <div id="map" class="map"></div>
+
+    <!-- Fehlerflaeche: schwarze Schraffur statt weiss, damit eine tote Karte
+         nicht wie eine leere Karte aussieht. -->
+    <div class="mapfail" id="mapfail" hidden>
+      <p class="mapfail__msg">kartendaten nicht erreichbar<br><span>die nös stimmen trotzdem</span></p>
+      <button class="pill pill--y" id="mapRetry" type="button">nochmal</button>
+    </div>
+
+    <!-- Fadenkreuz-Modus: Karte bewegt sich unter dem festen Kreuz -->
+    <div class="cross" id="cross" hidden>
+      <div class="cross__mark"></div>
+      <p class="cross__hint" id="crossHint">karte schieben, dann bestätigen</p>
+      <div class="cross__acts">
+        <button class="pill pill--k" id="crossCancel" type="button">abbrechen</button>
+        <button class="pill pill--y" id="crossOk" type="button">hier</button>
+      </div>
+    </div>
+
+    <div class="hud">
+      <button class="iconbtn hud__menu" id="menuBtn" type="button" aria-label="Liste öffnen">
+        <span></span><span></span><span></span>
+      </button>
+      <button class="iconbtn hud__loc" id="locBtn" type="button" aria-label="Mein Standort">◎</button>
+      <button class="cta" id="addBtn" type="button">
+        <img class="noe cta__mark" src="noe.png" alt="Nö" width="851" height="851">
+        <span>hinzufügen</span>
+      </button>
+    </div>
+  </main>
+
+  <!-- DETAIL — der Aufbau aus dem Prototyp: Bildflaeche, darunter cyan Leiste -->
+  <section class="panel" id="panel" hidden aria-label="Sticker-Detail">
+    <div class="panel__banner" id="panelBanner" hidden>
+      <p>geteilter nö — noch nicht in deiner sammlung</p>
+      <div class="panel__banneracts">
+        <button class="pill pill--y" id="importAdd" type="button">zu meiner karte</button>
+        <button class="pill pill--ghost" id="importDrop" type="button">verwerfen</button>
+      </div>
+    </div>
+
+    <button class="iconbtn panel__close" id="panelClose" type="button" aria-label="Schliessen">✕</button>
+
+    <figure class="shot" id="panelShot"></figure>
+
+    <div class="strip">
+      <button class="like" id="likeBtn" type="button" data-like-for="">
+        <span class="like__heart" aria-hidden="true">♥</span><span class="n">0</span>
+      </button>
+      <p class="coords" id="panelCoords"></p>
+      <ul class="taglist" id="panelTags"></ul>
+    </div>
+
+    <div class="panel__acts">
+      <button class="linkbtn" id="shareBtn" type="button">teilen</button>
+      <button class="linkbtn" id="reportBtn" type="button">melden</button>
+      <button class="linkbtn linkbtn--del" id="delBtn" type="button" hidden>löschen</button>
+    </div>
+  </section>
+
+</div><!-- /.app -->
+
+<!-- SHEET zum Hinzufuegen -->
+<div class="scrim" id="scrim" hidden></div>
+<section class="sheet" id="sheet" hidden aria-label="Nö hinzufügen">
+  <header class="sheet__head">
+    <h2 class="sheet__title"><img class="noe" src="noe.png" alt="Nö" width="851" height="851"> kleben</h2>
+    <button class="iconbtn" id="sheetClose" type="button" aria-label="Schliessen">✕</button>
+  </header>
+
+  <p class="coords coords--sheet" id="sheetCoords"></p>
+
+  <div class="where" id="sheetWhere">
+    <button class="pill pill--ghost" id="useLoc" type="button">mein standort</button>
+    <button class="pill pill--ghost" id="usePick" type="button">auf karte wählen</button>
+  </div>
+
+  <fieldset class="tagpick">
+    <legend>was für ein spot?</legend>
+    <div class="tagpick__row" id="tagPick"></div>
+  </fieldset>
+
+  <div class="photo">
+    <label class="pill pill--ghost photo__label" for="photoInput">foto (optional)</label>
+    <input class="vh" id="photoInput" type="file" accept="image/*" capture="environment">
+    <div class="photo__prev" id="photoPrev" hidden>
+      <img id="photoImg" alt="Vorschau">
+      <button class="iconbtn" id="photoDrop" type="button" aria-label="Foto entfernen">✕</button>
+    </div>
+  </div>
+
+  <button class="cta cta--wide" id="stickBtn" type="button">kleben</button>
+</section>
+
+<!-- ADMIN -->
+<section class="sheet sheet--sm" id="adminSheet" hidden aria-label="Admin">
+  <header class="sheet__head">
+    <h2 class="sheet__title">admin</h2>
+    <button class="iconbtn" id="adminClose" type="button" aria-label="Schliessen">✕</button>
+  </header>
+  <p class="hint">demo — das passwort steht im quelltext.</p>
+  <input class="search__input" id="adminPw" type="password" placeholder="passwort" autocomplete="off">
+  <button class="cta cta--wide" id="adminGo" type="button">anmelden</button>
+</section>
+
+<!-- VARIANTEN -->
+<section class="sheet sheet--sm" id="varSheet" hidden aria-label="Stil wählen">
+  <header class="sheet__head">
+    <h2 class="sheet__title">stil</h2>
+    <button class="iconbtn" id="varClose" type="button" aria-label="Schliessen">✕</button>
+  </header>
+  <ul class="varlist" id="varList"></ul>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="fatal" id="fatal" hidden>etwas ist schiefgelaufen — <button id="fatalReload" type="button">neu laden</button></div>
+
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

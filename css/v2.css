@@ -1,0 +1,139 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   VARIANTE 2 — HI-VIS
+   „Ein siebgedrucktes A1-Plakat." Eine Foundry-Stimme, maximales Gewicht,
+   null Subtilität. Keine Pill hat hier einen Radius — alles stumpfe Kante.
+
+   Messapia      — Luca Marsano       SIL OFL 1.1   collletttivo.it
+   Apfel Grotezk — Collletttivo       SIL OFL 1.1
+   Necto Mono    — Marco Condello     SIL OFL 1.1
+
+   Layout: schwarze Leiste unten fest verankert, Detail als Vollhöhen-Sheet,
+   Warnstreifen an den Kanten.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer variant {
+  @font-face {
+    font-family: 'Messapia';
+    src: url('https://cdn.jsdelivr.net/gh/collletttivo/messapia@main/fonts/Messapia-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Apfel Grotezk';
+    src: url('https://cdn.jsdelivr.net/gh/collletttivo/apfel-grotezk@main/fonts/ApfelGrotezk-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Apfel Grotezk';
+    src: url('https://cdn.jsdelivr.net/gh/collletttivo/apfel-grotezk@main/fonts/ApfelGrotezk-Fett.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Necto Mono';
+    src: url('https://cdn.jsdelivr.net/gh/collletttivo/necto-mono@main/fonts/NectoMono-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-display: swap;
+  }
+
+  :root {
+    --font-display: 'Messapia', sans-serif;
+    --font-ui: 'Apfel Grotezk', sans-serif;
+    --font-mono: 'Necto Mono', ui-monospace, monospace;
+
+    --display-weight: 700;
+    --display-case: uppercase;
+    --display-track: 0;
+    --display-lead: 0.84;
+
+    --ui-weight: 700;
+    --ui-case: uppercase;
+    --ui-track: 0.08em;
+
+    --step--1: 0.7rem;
+    --step-0: 0.88rem;
+    --step-2: 1.5rem;
+
+    /* Hier ist NICHTS rund. Das ist der halbe Unterschied zu Variante 1. */
+    --radius: 0px;
+    --radius-box: 0px;
+    --bw: 3px;
+    --pill-pad: 8px 14px;
+    --pad: 12px;
+    --sticker-px: 42px;
+    --surface: var(--y);
+  }
+
+  /* Warnstreifen an den tragenden Kanten */
+  .feed__head {
+    background: var(--y);
+    border-block-end: 0;
+    border-image: repeating-linear-gradient(45deg, var(--k) 0 9px, var(--y) 9px 18px) 8;
+    border-block-end-width: 8px;
+    border-block-end-style: solid;
+  }
+
+  .brand { font-size: 1.6rem; }
+  .brand__mark { inline-size: 30px; block-size: 30px; }
+
+  /* Die HUD wird zur durchgehenden schwarzen Leiste — das ist das
+     Layout-Merkmal dieser Variante. */
+  .hud {
+    inset-inline: 0;
+    inset-block-end: 0;
+    padding: 10px 12px calc(10px + var(--safe-b));
+    background: var(--k);
+    gap: 8px;
+    border-block-start: var(--bw) solid var(--k);
+  }
+  .hud .iconbtn { background: var(--k); color: var(--y); border-color: var(--y); }
+  .hud__menu span { background: var(--y); }
+  .cta {
+    background: var(--y);
+    border-color: var(--y);
+    padding: 12px 18px;
+    font-size: 0.95rem;
+  }
+  .cross__acts { inset-block-end: calc(70px + var(--safe-b)); }
+
+  .maplibregl-ctrl-bottom-right { bottom: 62px; }
+
+  /* Vollhöhen-Detail statt Bottom-Sheet */
+  :root { --panel-max: 100dvh; }
+  .panel { inset-block: 0; border-width: 0; }
+  .panel__acts {
+    padding-block-end: calc(72px + var(--safe-b));
+    background: var(--k);
+    color: var(--paper);
+  }
+  .panel__acts .linkbtn { color: var(--y); }
+  .panel__acts .linkbtn--del { color: var(--paper); }
+  .shot { aspect-ratio: 1; }
+
+  .tab { border-width: var(--bw); }
+  .tab[aria-selected='true'] { background: var(--k); color: var(--y); }
+
+  .card {
+    border-width: var(--bw);
+    grid-template-columns: 72px 1fr auto;
+  }
+  .card__tags { font-size: 0.8rem; }
+
+  .cards { gap: 8px; }
+
+  .coords { font-size: 0.66rem; letter-spacing: -0.02em; }
+
+  @media (min-width: 900px) {
+    :root {
+      --areas: 'feed map';
+      --cols: 400px 1fr;
+      --a-feed: feed;
+      --feed-closed: none;
+      --feed-w: 100%;
+    }
+    .feed { position: relative; }
+    .feed__close, .hud__menu { display: none; }
+    .panel { inset-inline-start: auto; inline-size: min(460px, 44vw); }
+  }
+}

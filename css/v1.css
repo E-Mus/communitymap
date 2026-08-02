@@ -1,0 +1,74 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   VARIANTE 1 — PROTOTYP
+   „Ein Vermessungsgerät, das zufällig Graffiti anzeigt."
+   Hierarchie über BREITE statt Gewicht: alle drei Schriften haben eine
+   Width-Achse, und die trägt den Rhythmus.
+
+   Anybody      — Etcetera Type Co.        SIL OFL 1.1   wdth 50–150
+   Archivo      — Omnibus-Type             SIL OFL 1.1   wdth 62–125
+   Martian Mono — Evil Martians            SIL OFL 1.1   wdth 75–112.5
+
+   Layout: am nächsten am Figma-Prototyp. Vollbild-Karte, gelbe Pill unten
+   rechts, Detail als Bottom-Sheet mit cyan Leiste.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@import url("https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,100..900&family=Archivo:wdth,wght@62..125,100..900&family=Martian+Mono:wdth,wght@75..112.5,100..800&display=swap");
+
+@layer variant {
+  :root {
+    --font-display: "Anybody", sans-serif;
+    --font-ui: "Archivo", sans-serif;
+    --font-mono: "Martian Mono", ui-monospace, monospace;
+
+    --display-vf: "wdth" 150, "wght" 900;
+    --display-case: lowercase;
+    --display-track: -0.03em;
+    --display-lead: 0.88;
+
+    --ui-vf: "wdth" 78, "wght" 700;
+    --ui-case: lowercase;
+    --ui-track: 0.05em;
+
+    --step-2: 1.75rem;
+    --radius: 999px;
+    --radius-box: 0px;
+    --bw: 2px;
+    --sticker-px: 46px;
+  }
+
+  /* Koordinaten schmal und tabellarisch — sie sollen wie ein Messwert
+     aussehen, nicht wie Fliesstext. */
+  .coords {
+    font-variation-settings: "wdth" 75, "wght" 400;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.66rem;
+  }
+
+  /* Die Marke lebt vom Breitenkontrast: extrabreites Display neben
+     schmalgestelltem UI. */
+  .brand__text { font-variation-settings: "wdth" 150, "wght" 900; }
+
+  .tab { font-variation-settings: "wdth" 70, "wght" 700; }
+
+  .cta { font-variation-settings: "wdth" 85, "wght" 800; }
+
+  /* Ab Tablet darf der Feed stehen bleiben statt zu überlagern. */
+  @media (min-width: 900px) {
+    :root {
+      --areas: "feed map";
+      --cols: 380px 1fr;
+      --a-feed: feed;
+      --feed-closed: none;
+      --feed-w: 100%;
+    }
+    .feed { position: relative; }
+    .feed__close, .hud__menu { display: none; }
+    .panel {
+      inset-inline-start: auto;
+      inline-size: min(440px, 42vw);
+      inset-block-end: 0;
+      max-block-size: 72dvh;
+      border-inline-start: var(--bw) solid var(--k);
+    }
+  }
+}

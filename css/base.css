@@ -1,0 +1,904 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   NöMap — Basis
+   Palette: NUR Cyan / Magenta / Gelb / Schwarz.
+   Weiss und Grau sind ausschliesslich fuer die Karte reserviert.
+
+   Cascade Layers: die Varianten schreiben ausschliesslich in @layer variant.
+   Layer-Reihenfolge schlaegt Spezifitaet, deshalb braucht keine Variante
+   !important und keinen [data-variant="n"]-Praefix vor jedem Selektor.
+   Regel fuer diese Datei: null !important, null ID-Selektoren.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Reihenfolge zaehlt, nicht Quellreihenfolge. `state` liegt bewusst nach
+   `variant`, damit [hidden] von keiner Variante versehentlich ausgehebelt wird.
+   Achtung: UNGESCHICHTETES CSS schlaegt jedes @layer — MapLibres eigenes
+   Stylesheet ist ungeschichtet, seine Regeln werden deshalb unten in einem
+   ungeschichteten Block ueberschrieben, nicht hier drin. */
+@layer reset, tokens, skeleton, components, variant, state;
+
+/* ─── TOKENS ──────────────────────────────────────────────────────────────── */
+@layer tokens {
+  :root {
+    /* TIER 1 — MARKE. Unveraenderlich. Keine Variante darf diese anfassen.
+       Pruefbar mit:  grep -E '\-\-(c|m|y|k|paper|block|label):' css/v*.css   */
+    --c: #009DE0;
+    --m: #C4007A;
+    --y: #FFF300;
+    --k: #000000;
+
+    /* nur fuer die Karte */
+    --paper: #ffffff;
+    --block: #e8e8e8;
+    --water: #ededed;
+    --label: #9a9a9a;
+
+    /* TIER 2 — SYSTEM. Hier lebt jede Variante. */
+    --font-display: ui-sans-serif, system-ui, sans-serif;
+    --font-ui: ui-sans-serif, system-ui, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, monospace;
+
+    --display-weight: 900;
+    --display-case: none;
+    --display-track: -0.02em;
+    --display-lead: 0.92;
+    --display-vf: normal;
+
+    --ui-weight: 700;
+    --ui-case: lowercase;
+    --ui-track: 0.02em;
+    --ui-vf: normal;
+
+    --step--1: 0.72rem;
+    --step-0: 0.9rem;
+    --step-1: 1.1rem;
+    --step-2: 1.6rem;
+    --step-3: clamp(2.2rem, 9vw, 3.6rem);
+
+    --radius: 999px;
+    --radius-box: 0px;
+    --bw: 2px;
+    --gap: 10px;
+    --pad: 14px;
+
+    --accent: var(--c);
+    --surface: var(--y);
+
+    /* TIER 3 — KOMPONENTE. Abgeleitet, Varianten nur bei echten Ausnahmen. */
+    --pill-pad: 7px 15px;
+    --sticker-px: 46px;
+    --panel-closed: translateY(101%);
+    --feed-closed: translateX(-101%);
+    --feed-w: min(88vw, 380px);
+    --panel-h: auto;
+
+    --areas: "map";
+    --cols: 1fr;
+    --rows: 1fr;
+
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-t: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* ─── RESET ───────────────────────────────────────────────────────────────── */
+@layer reset {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overscroll-behavior: none;
+  }
+
+  body {
+    font-family: var(--font-ui);
+    font-size: var(--step-0);
+    color: var(--k);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, p, ul, ol, figure, fieldset, legend {
+    margin: 0;
+    padding: 0;
+  }
+  ul, ol { list-style: none; }
+  fieldset { border: 0; }
+
+  button, input, select, textarea {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    margin: 0;
+  }
+  button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
+  img { display: block; max-width: 100%; }
+
+  :focus-visible {
+    outline: var(--bw) solid var(--c);
+    outline-offset: 2px;
+  }
+
+  .vh {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Der Slap-Effekt ist genau die Art Animation, die vestibulaer empfindlichen
+     Menschen uebel wird. Ein Media-Query, alles aus. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms;
+      animation-iteration-count: 1;
+      transition-duration: 0.01ms;
+      scroll-behavior: auto;
+    }
+  }
+}
+
+/* ─── SKELETT ─────────────────────────────────────────────────────────────── */
+@layer skeleton {
+  .app {
+    display: grid;
+    position: relative; /* Bezugsrahmen fuer Feed/Panel als Overlay */
+    block-size: 100dvh;
+    inline-size: 100%;
+    grid-template-columns: var(--cols);
+    grid-template-rows: var(--rows);
+    grid-template-areas: var(--areas);
+    overflow: hidden;
+  }
+
+  .mapwrap { grid-area: var(--a-map, map); position: relative; min-inline-size: 0; min-block-size: 0; }
+  .feed    { grid-area: var(--a-feed, map); min-block-size: 0; }
+  .panel   { grid-area: var(--a-panel, map); }
+}
+
+/* ─── KOMPONENTEN ─────────────────────────────────────────────────────────── */
+@layer components {
+
+  /* Das Nö selbst. Ueberall wo "Nö" stehen wuerde, steht dieses Bild. */
+  .noe {
+    inline-size: 1.15em;
+    block-size: 1.15em;
+    object-fit: contain;
+    display: inline-block;
+    vertical-align: -0.22em;
+  }
+
+  /* ── Ladebalken / Fehlerflaeche ───────────────────────────────────────── */
+  .loadbar {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline: 0;
+    block-size: 3px;
+    background: var(--c);
+    transform-origin: 0 50%;
+    transform: scaleX(0);
+    z-index: 60;
+    transition: transform 0.4s ease, opacity 0.3s 0.2s ease;
+  }
+  .loadbar[data-p="start"] { transform: scaleX(0.35); }
+  .loadbar[data-p="mid"]   { transform: scaleX(0.75); }
+  .loadbar[data-p="done"]  { transform: scaleX(1); opacity: 0; }
+
+  .mapfail {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 18px;
+    text-align: center;
+    background:
+      repeating-linear-gradient(45deg, var(--k) 0 12px, transparent 12px 26px),
+      var(--paper);
+  }
+  .mapfail__msg {
+    font-family: var(--font-display);
+    font-size: var(--step-2);
+    line-height: 1.05;
+    text-transform: lowercase;
+    background: var(--y);
+    padding: 12px 18px;
+    box-decoration-break: clone;
+  }
+  .mapfail__msg span { font-family: var(--font-ui); font-size: var(--step-0); }
+
+  /* ── Pills ────────────────────────────────────────────────────────────── */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: var(--pill-pad);
+    border-radius: var(--radius);
+    border: var(--bw) solid var(--k);
+    background: var(--paper);
+    font-family: var(--font-ui);
+    font-weight: var(--ui-weight);
+    font-variation-settings: var(--ui-vf);
+    text-transform: var(--ui-case);
+    letter-spacing: var(--ui-track);
+    font-size: var(--step--1);
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .pill--y { background: var(--y); }
+  .pill--c { background: var(--c); }
+  .pill--m { background: var(--m); color: var(--y); }
+  .pill--k { background: var(--k); color: var(--paper); }
+  .pill--ghost { background: transparent; }
+  .pill[aria-pressed="true"] { background: var(--k); color: var(--y); }
+  .pill[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+  .linkbtn {
+    font-family: var(--font-ui);
+    font-weight: var(--ui-weight);
+    text-transform: var(--ui-case);
+    letter-spacing: var(--ui-track);
+    font-size: var(--step--1);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 2px;
+    padding: 4px 2px;
+  }
+  .linkbtn--del { color: var(--m); }
+
+  .iconbtn {
+    inline-size: 40px;
+    block-size: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius);
+    border: var(--bw) solid var(--k);
+    background: var(--paper);
+    font-size: 15px;
+    line-height: 1;
+    flex: none;
+  }
+
+  /* ── HUD ueber der Karte ──────────────────────────────────────────────── */
+  /* Der Abstand nach unten laesst die Attributionszeile frei — die muss
+     sichtbar bleiben (Lizenzpflicht), darf aber nicht unter den Buttons
+     verschwinden. */
+  .hud {
+    position: absolute;
+    inset-block-end: calc(24px + var(--safe-b));
+    inset-inline: 14px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: var(--gap);
+    pointer-events: none;
+  }
+  .hud > * { pointer-events: auto; }
+  .hud__menu { display: grid; gap: 3px; align-content: center; padding: 0 10px; }
+  .hud__menu span { display: block; inline-size: 16px; block-size: 2px; background: var(--k); }
+  .hud__loc { font-size: 18px; }
+  .hud__loc[disabled] { opacity: 0.35; }
+
+  .cta {
+    margin-inline-start: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 20px;
+    border-radius: var(--radius);
+    border: var(--bw) solid var(--k);
+    background: var(--y);
+    font-family: var(--font-ui);
+    font-weight: var(--ui-weight);
+    font-variation-settings: var(--ui-vf);
+    text-transform: var(--ui-case);
+    letter-spacing: var(--ui-track);
+    font-size: var(--step-0);
+    line-height: 1;
+  }
+  .cta__mark { inline-size: 20px; block-size: 20px; vertical-align: 0; }
+  .cta--wide { inline-size: 100%; justify-content: center; margin: 0; padding: 15px; }
+  .cta[aria-pressed="true"] { background: var(--m); color: var(--y); }
+
+  /* ── Fadenkreuz ───────────────────────────────────────────────────────── */
+  .cross { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+  .cross__mark {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    inline-size: 44px;
+    block-size: 44px;
+    margin: -22px 0 0 -22px;
+    border: var(--bw) solid var(--m);
+    border-radius: var(--radius);
+  }
+  .cross__mark::before, .cross__mark::after {
+    content: "";
+    position: absolute;
+    background: var(--m);
+  }
+  .cross__mark::before { inset-block: -14px; inset-inline-start: 50%; inline-size: 2px; margin-inline-start: -1px; }
+  .cross__mark::after  { inset-inline: -14px; inset-block-start: 50%; block-size: 2px; margin-block-start: -1px; }
+  .cross__hint {
+    position: absolute;
+    inset-block-start: calc(50% + 42px);
+    inset-inline: 0;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+  }
+  .cross__hint span { background: var(--y); padding: 3px 8px; }
+  .cross__acts {
+    position: absolute;
+    inset-block-end: calc(16px + var(--safe-b));
+    inset-inline: 14px;
+    display: flex;
+    gap: var(--gap);
+    justify-content: center;
+    pointer-events: auto;
+  }
+
+  /* ── Feed / Menue ─────────────────────────────────────────────────────── */
+  /* Mobile-first: Feed ist ein Overlay ueber der Karte. Varianten, die ihn als
+     echte Spalte wollen, setzen position: relative — dann wird er wieder zum
+     Grid-Item und --feed-closed auf none. */
+  .feed {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: 8;
+    display: flex;
+    flex-direction: column;
+    background: var(--paper);
+    border-inline-end: var(--bw) solid var(--k);
+    transform: var(--feed-closed);
+    transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
+    inline-size: var(--feed-w);
+    max-inline-size: 100%;
+  }
+  .app[data-feed="open"] .feed { transform: none; }
+
+  .feed__head {
+    display: flex;
+    align-items: center;
+    gap: var(--gap);
+    padding: calc(var(--pad) + var(--safe-t)) var(--pad) var(--pad);
+    border-block-end: var(--bw) solid var(--k);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-variation-settings: var(--display-vf);
+    text-transform: var(--display-case);
+    letter-spacing: var(--display-track);
+    line-height: var(--display-lead);
+    font-size: var(--step-2);
+    margin-inline-end: auto;
+  }
+  .brand__mark { inline-size: 34px; block-size: 34px; vertical-align: 0; }
+
+  .search { padding: var(--pad); border-block-end: var(--bw) solid var(--k); position: relative; }
+  .search__input {
+    inline-size: 100%;
+    padding: 10px 14px;
+    border: var(--bw) solid var(--k);
+    border-radius: var(--radius);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    background: var(--paper);
+  }
+  .search__input::placeholder { color: var(--k); opacity: 0.4; }
+  .search__results {
+    position: absolute;
+    inset-inline: var(--pad);
+    inset-block-start: calc(100% - 6px);
+    z-index: 9;
+    background: var(--paper);
+    border: var(--bw) solid var(--k);
+    max-block-size: 46vh;
+    overflow: auto;
+  }
+  .search__results li { padding: 9px 12px; border-block-end: 1px solid var(--k); cursor: pointer; }
+  .search__results li:last-child { border-block-end: 0; }
+  .search__results li:hover, .search__results li[aria-selected="true"] { background: var(--y); }
+  .search__results b { font-weight: var(--ui-weight); }
+  .search__results small { display: block; font-family: var(--font-mono); font-size: 10px; opacity: 0.6; }
+
+  .tabs {
+    display: flex;
+    gap: 6px;
+    padding: var(--pad) var(--pad) 0;
+    flex-wrap: wrap;
+  }
+  .tab {
+    padding: var(--pill-pad);
+    border: var(--bw) solid var(--k);
+    border-radius: var(--radius);
+    font-family: var(--font-ui);
+    font-weight: var(--ui-weight);
+    text-transform: var(--ui-case);
+    letter-spacing: var(--ui-track);
+    font-size: var(--step--1);
+    line-height: 1;
+  }
+  .tab[aria-selected="true"] { background: var(--k); color: var(--y); }
+  .tab--admin[aria-selected="true"] { background: var(--m); color: var(--y); }
+
+  .cards {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--pad);
+    display: grid;
+    gap: var(--gap);
+    align-content: start;
+  }
+
+  .card {
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 8px;
+    border: var(--bw) solid var(--k);
+    border-radius: var(--radius-box);
+    background: var(--paper);
+    cursor: pointer;
+    text-align: start;
+    inline-size: 100%;
+  }
+  .card[aria-selected="true"] { background: var(--y); }
+  .card__shot {
+    inline-size: 64px;
+    aspect-ratio: 1;
+    object-fit: cover;
+    background: var(--c);
+    border: 1px solid var(--k);
+  }
+  .card__shot--empty { display: grid; place-items: center; background: var(--y); }
+  .card__shot--empty .noe { inline-size: 66%; block-size: 66%; }
+  .card__body { min-inline-size: 0; }
+  .card__tags {
+    font-family: var(--font-ui);
+    font-weight: var(--ui-weight);
+    text-transform: var(--ui-case);
+    letter-spacing: var(--ui-track);
+    font-size: var(--step--1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .card__co { font-family: var(--font-mono); font-size: 10px; opacity: 0.65; margin-block-start: 3px; }
+  .card__flag { font-family: var(--font-mono); font-size: 10px; color: var(--m); margin-block-start: 3px; }
+
+  .like {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: var(--pill-pad);
+    border: var(--bw) solid var(--k);
+    border-radius: var(--radius);
+    background: var(--paper);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    line-height: 1;
+  }
+  .like[data-on] { background: var(--m); color: var(--y); border-color: var(--k); }
+  .like__heart { font-size: 1.05em; }
+  .like[data-on] .like__heart { animation: bump 0.32s cubic-bezier(0.18, 0.86, 0.28, 1); }
+
+  .feed__foot {
+    border-block-start: var(--bw) solid var(--k);
+    padding: var(--pad);
+    padding-block-end: calc(var(--pad) + var(--safe-b));
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    align-items: baseline;
+  }
+  .meter, .disclaimer {
+    flex-basis: 100%;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    opacity: 0.6;
+    line-height: 1.45;
+  }
+
+  /* ── Detail-Panel ─────────────────────────────────────────────────────── */
+  .panel {
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline: 0;
+    z-index: 9;
+    background: var(--paper);
+    border: var(--bw) solid var(--k);
+    transform: var(--panel-closed);
+    transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    max-block-size: var(--panel-max, 76dvh);
+    overflow: hidden;
+  }
+  .app[data-panel="open"] .panel { transform: none; }
+  .panel__close { position: absolute; inset-block-start: 10px; inset-inline-end: 10px; z-index: 2; }
+
+  .panel__banner {
+    background: var(--c);
+    border-block-end: var(--bw) solid var(--k);
+    padding: 10px var(--pad);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-ui);
+    font-weight: var(--ui-weight);
+    text-transform: var(--ui-case);
+    font-size: var(--step--1);
+  }
+  .panel__banneracts { display: flex; gap: 6px; }
+
+  .shot {
+    aspect-ratio: 4 / 3;
+    background: var(--paper);
+    border-block-end: var(--bw) solid var(--k);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    min-block-size: 0;
+  }
+  .shot img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+  /* Leerzustand bewusst GELB: die Leiste darunter ist cyan, und zwei cyane
+     Flaechen uebereinander lesen sich als ein Block. */
+  .shot--empty { background: var(--y); gap: 10px; }
+  .shot--empty .noe { inline-size: 38%; block-size: auto; transform: rotate(-7deg); }
+  .shot--empty figcaption { max-inline-size: 30ch; text-align: center; padding: 0 12px; }
+
+  /* Die cyan Leiste aus dem Prototyp */
+  .strip {
+    background: var(--c);
+    padding: 12px var(--pad);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+  .coords {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: -0.01em;
+    margin-inline-end: auto;
+  }
+  .coords--sheet { display: block; padding: 0 var(--pad); opacity: 0.7; }
+  .taglist { display: flex; flex-wrap: wrap; gap: 6px; }
+  .taglist li {
+    padding: 5px 12px;
+    border: var(--bw) solid var(--k);
+    border-radius: var(--radius);
+    font-family: var(--font-ui);
+    font-weight: var(--ui-weight);
+    text-transform: var(--ui-case);
+    letter-spacing: var(--ui-track);
+    font-size: var(--step--1);
+    line-height: 1;
+  }
+  .panel__acts {
+    display: flex;
+    gap: 16px;
+    padding: 10px var(--pad);
+    padding-block-end: calc(10px + var(--safe-b));
+    border-block-start: var(--bw) solid var(--k);
+  }
+
+  /* ── Sheet ────────────────────────────────────────────────────────────── */
+  .scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: rgb(0 0 0 / 0.55);
+  }
+  .sheet {
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: 21;
+    background: var(--paper);
+    border-block-start: var(--bw) solid var(--k);
+    padding: var(--pad);
+    padding-block-end: calc(var(--pad) + var(--safe-b));
+    display: grid;
+    gap: 14px;
+    max-block-size: 92dvh;
+    overflow-y: auto;
+    animation: sheet-in 0.26s cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+  @media (min-width: 720px) {
+    .sheet {
+      inset-block-end: 50%;
+      inset-inline: 50%;
+      transform: translate(-50%, 50%);
+      inline-size: min(460px, 92vw);
+      border: var(--bw) solid var(--k);
+      animation-name: sheet-in-mid;
+    }
+  }
+  .sheet--sm { gap: 12px; }
+  .sheet__head { display: flex; align-items: center; gap: var(--gap); }
+  .sheet__title {
+    margin-inline-end: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-variation-settings: var(--display-vf);
+    text-transform: var(--display-case);
+    letter-spacing: var(--display-track);
+    font-size: var(--step-2);
+  }
+  .sheet__title .noe { inline-size: 30px; block-size: 30px; vertical-align: 0; }
+  .hint { font-family: var(--font-mono); font-size: 10px; opacity: 0.6; }
+
+  .where { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tagpick legend {
+    font-family: var(--font-ui);
+    font-weight: var(--ui-weight);
+    text-transform: var(--ui-case);
+    letter-spacing: var(--ui-track);
+    font-size: var(--step--1);
+    margin-block-end: 8px;
+  }
+  .tagpick__row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .photo { display: grid; gap: 10px; justify-items: start; }
+  .photo__prev { position: relative; inline-size: 100%; }
+  .photo__prev img {
+    inline-size: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border: var(--bw) solid var(--k);
+  }
+  .photo__prev .iconbtn { position: absolute; inset-block-start: 8px; inset-inline-end: 8px; }
+
+  .varlist { display: grid; gap: 8px; }
+  .varlist button {
+    inline-size: 100%;
+    text-align: start;
+    padding: 12px 14px;
+    border: var(--bw) solid var(--k);
+    display: grid;
+    gap: 3px;
+  }
+  .varlist button[aria-current="true"] { background: var(--y); }
+  .varlist strong {
+    font-family: var(--font-ui);
+    font-weight: var(--ui-weight);
+    text-transform: var(--ui-case);
+    letter-spacing: var(--ui-track);
+  }
+  .varlist small { font-family: var(--font-mono); font-size: 10px; opacity: 0.65; }
+
+  /* ── Toast / Fatal ────────────────────────────────────────────────────── */
+  .toast {
+    position: fixed;
+    inset-block-end: calc(16px + var(--safe-b));
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+    z-index: 40;
+    max-inline-size: min(92vw, 460px);
+    background: var(--k);
+    color: var(--paper);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: var(--step--1);
+    animation: toast-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+  .toast button {
+    font-family: var(--font-ui);
+    font-weight: var(--ui-weight);
+    text-transform: var(--ui-case);
+    letter-spacing: var(--ui-track);
+    color: var(--y);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    white-space: nowrap;
+  }
+  .toast--warn { background: var(--m); color: var(--y); }
+
+  .fatal {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline: 0;
+    z-index: 99;
+    background: var(--k);
+    color: var(--paper);
+    padding: 12px 16px;
+    text-align: center;
+    font-size: var(--step--1);
+  }
+  .fatal button { color: var(--y); text-decoration: underline; }
+
+  .volatile {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline: 0;
+    z-index: 50;
+    background: var(--c);
+    padding: 6px 12px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+
+  /* ── Marker-Overlay + Slap ────────────────────────────────────────────── */
+  /* Genau EIN Knoten davon existiert zur Zeit: der Sticker der gerade geklebt
+     wird, der ausgewaehlte, oder der aus einem geteilten Link importierte.
+     Muss pixelgleich zu dem sein, was der Symbol-Layer zeichnet. */
+  .ov {
+    inline-size: var(--sticker-px);
+    block-size: var(--sticker-px);
+    position: relative;
+    will-change: transform;
+  }
+  .ov__img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: contain;
+    transform: rotate(var(--rot, 0deg));
+  }
+  .ov--sel .ov__img { animation: pop 0.28s cubic-bezier(0.18, 0.86, 0.28, 1); }
+  .ov--sel::after {
+    content: "";
+    position: absolute;
+    inset: -9px;
+    border: 3px solid var(--y);
+    border-radius: var(--radius);
+  }
+  .ov--import::after {
+    content: "";
+    position: absolute;
+    inset: -9px;
+    border: 3px solid var(--c);
+    border-radius: var(--radius);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+
+  /* Der Slap. 440ms gesamt, Aufprall bei 52%, Nachfedern kuerzer als der Anflug. */
+  .ov--slap { animation: slap 440ms cubic-bezier(0.18, 0.86, 0.28, 1) both; }
+  .ov--slap .ov__img { animation: squash 440ms cubic-bezier(0.16, 0.8, 0.3, 1) both; }
+
+  .shock {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    inline-size: 90px;
+    aspect-ratio: 1;
+    border: 10px solid var(--y);
+    border-radius: var(--radius);
+    pointer-events: none;
+    animation: shock 420ms cubic-bezier(0.12, 0.72, 0.3, 1) forwards;
+  }
+  .shock--2 { border-color: var(--c); animation-delay: 60ms; animation-duration: 520ms; }
+
+  /* Screen-Shake auf der UI-Huelle, NIE auf dem Karten-Canvas — das erzwaenge
+     sonst ein komplettes Tile-Repaint pro Frame. */
+  .app[data-hit] { animation: shake 170ms cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+}
+
+/* ─── KEYFRAMES ───────────────────────────────────────────────────────────── */
+@layer components {
+  @keyframes slap {
+    0%   { transform: translate3d(0, -20px, 0) scale(2.3); opacity: 0; }
+    14%  { opacity: 1; }
+    52%  { transform: translate3d(0, 0, 0) scale(0.84); }
+    68%  { transform: translate3d(0, 0, 0) scale(1.09); }
+    84%  { transform: translate3d(0, 0, 0) scale(0.965); }
+    100% { transform: translate3d(0, 0, 0) scale(1); }
+  }
+  /* Nicht-uniform, auf dem inneren Bild — ueberlagert sich mit slap statt es
+     zu ueberschreiben. Die Neigung laeuft dabei auf ihren Ruhewert zu. */
+  @keyframes squash {
+    0%   { transform: rotate(calc(var(--rot, 0deg) * 2.2)) scale(0.74, 1.32); }
+    46%  { transform: rotate(calc(var(--rot, 0deg) * 0.4)) scale(1.26, 0.72); }
+    66%  { transform: rotate(var(--rot, 0deg)) scale(0.94, 1.07); }
+    84%  { transform: rotate(var(--rot, 0deg)) scale(1.025, 0.98); }
+    100% { transform: rotate(var(--rot, 0deg)) scale(1, 1); }
+  }
+  @keyframes shock {
+    0%   { transform: translate(-50%, -50%) scale(0.18); opacity: 1; border-width: 10px; }
+    70%  { opacity: 0.5; }
+    100% { transform: translate(-50%, -50%) scale(2.9); opacity: 0; border-width: 1px; }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    16% { transform: translate3d(-4px, 3px, 0); }
+    33% { transform: translate3d(3px, -3px, 0); }
+    50% { transform: translate3d(-3px, -2px, 0); }
+    66% { transform: translate3d(2px, 2px, 0); }
+    83% { transform: translate3d(-1px, 1px, 0); }
+  }
+  @keyframes pop {
+    0% { transform: rotate(var(--rot, 0deg)) scale(1); }
+    45% { transform: rotate(var(--rot, 0deg)) scale(1.24); }
+    100% { transform: rotate(var(--rot, 0deg)) scale(1); }
+  }
+  @keyframes bump {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.4); }
+    100% { transform: scale(1); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.25; }
+  }
+  @keyframes sheet-in {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes sheet-in-mid {
+    from { transform: translate(-50%, 62%); opacity: 0; }
+    to { transform: translate(-50%, 50%); opacity: 1; }
+  }
+  @keyframes toast-in {
+    from { transform: translate(-50%, 120%); }
+    to { transform: translate(-50%, 0); }
+  }
+}
+
+/* ─── STATE ───────────────────────────────────────────────────────────────── */
+/* Liegt nach `variant`, damit keine Variante [hidden] aushebeln kann. Ohne das
+   gewinnt jedes display:grid/flex aus `components` gegen die UA-Regel
+   [hidden]{display:none} — und saemtliche Sheets stehen offen. */
+@layer state {
+  [hidden] { display: none; }
+}
+
+/* ─── VENDOR-OVERRIDES (bewusst UNGESCHICHTET) ────────────────────────────── */
+/* MapLibres Stylesheet ist ungeschichtet und schlaegt damit JEDES @layer.
+   Diese paar Regeln muessen deshalb ebenfalls ungeschichtet stehen; weil
+   base.css nach maplibre-gl.css eingebunden wird, entscheidet Quellreihenfolge.
+   Bewusst so klein wie moeglich gehalten. */
+.map.maplibregl-map {
+  position: absolute;
+  inset: 0;
+  font: inherit;
+}
+
+/* iOS: ohne das erscheint beim langen Tippen Lupe und Auswahl-Menue, und der
+   Long-Press zum Sticker-Setzen wird unbenutzbar. */
+.map, .map * {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Karten-Chrome in die Palette zwingen. Die Attribution BLEIBT sichtbar —
+   OSM/OpenFreeMap zu nennen ist Lizenzpflicht, nicht Geschmackssache. */
+.maplibregl-ctrl-attrib.maplibregl-compact {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  line-height: 1.6;
+  letter-spacing: 0;
+  background: rgb(255 255 255 / 0.86);
+  border-radius: 0;
+  min-height: 0;
+  margin: 0;
+}
+.maplibregl-ctrl-attrib-inner { padding: 1px 6px; }
+.maplibregl-ctrl-attrib a { color: var(--k); }
+.maplibregl-ctrl-attrib-button { display: none; }
+.maplibregl-ctrl-bottom-right { z-index: 1; bottom: 0; right: 0; }
+.maplibregl-ctrl-bottom-left { display: none; }
+.maplibregl-canvas { outline: none; }

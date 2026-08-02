@@ -15,7 +15,7 @@ Prototyp ohne Server: alles läuft im Browser, die eigenen Sichtungen liegen in
   Standort bzw. Fadenkreuz
 - Tags, optionales Foto, Likes, Melden (ab 3 Meldungen verborgen)
 - Ortssuche, Teilen-Link pro Sticker, Admin-Ansicht zum Löschen
-- **Fünf UI-Varianten** mit eigener Typografie *und* eigenem Layout —
+- **Sechs UI-Varianten** mit eigener Typografie *und* eigenem Layout —
   umschaltbar über *stil* unten im Menü
 
 ## Ausprobieren
@@ -23,7 +23,7 @@ Prototyp ohne Server: alles läuft im Browser, die eigenen Sichtungen liegen in
 | | |
 |---|---|
 | Sticker setzen | Finger eine halbe Sekunde auf die Karte halten |
-| Stil wechseln | Menü ☰ → unten *stil 1/5* |
+| Stil wechseln | Menü ☰ → unten *stil x/6* — **Stil 6** ist der CMYK-Stil |
 | Admin | Menü ☰ → *admin* → Passwort `nö` |
 | Karte kaputt sehen | Flugmodus an, neu laden — schwarze Schraffur statt weiß |
 

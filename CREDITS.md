@@ -45,6 +45,14 @@ Es lädt immer nur die Variante, die gerade aktiv ist.
 | 3 · zine | **Rubik Spray Paint** | **Bricolage Grotesque** — Mathieu Triay | **Space Mono** — Colophon |
 | 4 · galerie | **Sprat** — Ethan Nakache | **Instrument Sans** | **DM Mono** |
 | 5 · terminal | **Recursive** — Arrow Type (Stephen Nixon) | *dieselbe* | **Departure Mono** — Helena Zhang (MIT) |
+| 6 · cmyk | wie 1: **Anybody** | **Archivo** | **Martian Mono** |
+
+Stil 6 ist Stil 1 zu Ende gedacht: dort war die Fläche weiss mit CMYK-Akzenten,
+hier ist CMYK der Grundton. Das UI steht auf Cyan, gegliedert wird mit Gelb,
+akzentuiert mit Magenta; die Cluster wechseln die Druckfarbe mit der
+Gruppengrösse (gelb unter 10, magenta bis 49, cyan darüber — die Zahl wechselt
+zwingend mit, sonst wäre Gelb auf Gelb weg). Auf dem Handy nimmt das Menü den
+ganzen Schirm ein.
 
 Quellen: Google Fonts, [Collletttivo](https://www.collletttivo.it) (über
 jsDelivr), [Departure Mono](https://departuremono.com).
@@ -78,6 +86,12 @@ Zwei Konsequenzen, die im Code stehen:
   Farbe-auf-Weiß**, nie Farbe-auf-Farbe, und besteht aus ganzzahligen
   Rechtecken statt antialiaster Kreise. Sonst mischt entweder das Antialiasing
   oder das Herunterskalieren im Browser zwei Druckfarben zu einer dritten.
+- **Kein halbtransparentes Schwarz auf Flächen.** Schwarz mit Deckkraft über
+  Cyan ergibt ein stumpfes Dunkeltürkis, über Gelb ein Oliv. Der Abdunkler
+  hinter den Sheets ist deshalb ein Linienraster aus reinem Schwarz, und
+  Sekundärtext wird über Größe und Laufweite zurückgenommen statt über
+  Transparenz. Einzige Ausnahme: der Hintergrund der Karten-Attribution — der
+  liegt über der Karte, wo Weiß und Grau ohnehin erlaubt sind.
 
 ## Das Artwork
 

@@ -48,6 +48,51 @@ function stickerPx() {
   return parseFloat(v) || 46;
 }
 
+/* Farb-Token aufloesen.
+ * Nicht getPropertyValue lesen — das liefert bei `--cl-1: var(--m)` je nach
+ * Engine den unaufgeloesten Text zurueck. Stattdessen einen Probe-Knoten
+ * `color: var(--x)` faerben und die berechnete Farbe abholen: das ergibt
+ * immer ein fertiges rgb(). */
+let probe = null;
+function resolveColor(name, fallback) {
+  if (!probe) {
+    probe = document.createElement('span');
+    probe.style.cssText = 'position:absolute;width:0;height:0;visibility:hidden';
+    document.body.append(probe);
+  }
+  probe.style.color = '';
+  probe.style.color = `var(${name})`;
+  const v = getComputedStyle(probe).color;
+  return v && v !== 'rgba(0, 0, 0, 0)' ? v : fallback;
+}
+
+/* Cluster nach Anzahl: kleine Gruppen gelb, mittlere magenta, grosse cyan.
+ * Die Textfarbe wandert zwingend mit — gelbe Zahl auf gelber Blase waere
+ * unsichtbar, und Schwarz auf Magenta liegt bei nur ~3.6:1. */
+const CL_BREAK = [10, 50];
+function clusterColor() {
+  return [
+    'step', ['get', 'point_count'],
+    resolveColor('--cl-1', M), CL_BREAK[0],
+    resolveColor('--cl-2', M), CL_BREAK[1],
+    resolveColor('--cl-3', M),
+  ];
+}
+function clusterInk() {
+  return [
+    'step', ['get', 'point_count'],
+    resolveColor('--cl-1-ink', Y), CL_BREAK[0],
+    resolveColor('--cl-2-ink', Y), CL_BREAK[1],
+    resolveColor('--cl-3-ink', Y),
+  ];
+}
+const clusterRadius = () => [
+  'step', ['get', 'point_count'],
+  16, CL_BREAK[0],
+  22, CL_BREAK[1],
+  29,
+];
+
 /* Das Atlas-Bild ist (256 + 2*13) breit und wird mit pixelRatio 2 registriert,
  * rendert also bei icon-size 1 mit halber Pixelbreite in CSS-px. */
 function iconSizeExpr() {
@@ -83,10 +128,10 @@ function installSpotLayers() {
     source: SRC,
     filter: ['has', 'point_count'],
     paint: {
-      'circle-color': M,
+      'circle-color': clusterColor(),
       'circle-stroke-color': K,
       'circle-stroke-width': 2,
-      'circle-radius': ['step', ['get', 'point_count'], 15, 5, 19, 20, 24, 60, 30],
+      'circle-radius': clusterRadius(),
     },
   });
 
@@ -98,12 +143,10 @@ function installSpotLayers() {
     layout: {
       'text-field': ['get', 'point_count_abbreviated'],
       'text-font': ['Noto Sans Bold'], // GENAU EIN Font — Mehrfachstacks liefern 404
-      'text-size': ['step', ['get', 'point_count'], 12, 20, 13, 60, 15],
+      'text-size': ['step', ['get', 'point_count'], 12, CL_BREAK[0], 13, CL_BREAK[1], 15],
       'text-allow-overlap': true,
     },
-    /* Gelb auf Magenta ist ~5.5:1, Schwarz auf Magenta nur ~3.6:1 und matscht
-     * bei dieser Groesse. Beides strikt in der Palette. */
-    paint: { 'text-color': Y },
+    paint: { 'text-color': clusterInk() },
   });
 
   if (stickerImage) addStickerLayer();
@@ -218,10 +261,8 @@ function setOverlaid(id) {
 
 let overlaidId = null;
 function restorePaint() {
-  if (map && map.getLayer(L_STICK)) {
-    map.setLayoutProperty(L_STICK, 'icon-size', iconSizeExpr());
-    setOverlaid(overlaidId);
-  }
+  refreshSizes();
+  if (map && map.getLayer(L_STICK)) setOverlaid(overlaidId);
 }
 
 function makeOverlayEl(spot, cls) {
@@ -367,9 +408,15 @@ export function flyTo(center, zoom = 15) {
 export const center = () => map?.getCenter();
 export const canvasEl = () => map?.getCanvasContainer();
 
-/** Variante gewechselt: Sticker-Groesse kann sich geaendert haben. */
+/** Variante gewechselt: Sticker-Groesse und Clusterfarben koennen andere sein. */
 export function refreshSizes() {
-  if (map?.getLayer(L_STICK)) map.setLayoutProperty(L_STICK, 'icon-size', iconSizeExpr());
+  if (!map) return;
+  if (map.getLayer(L_STICK)) map.setLayoutProperty(L_STICK, 'icon-size', iconSizeExpr());
+  if (map.getLayer(L_CLUSTER)) {
+    map.setPaintProperty(L_CLUSTER, 'circle-color', clusterColor());
+    map.setPaintProperty(L_CLUSTER, 'circle-radius', clusterRadius());
+  }
+  if (map.getLayer(L_COUNT)) map.setPaintProperty(L_COUNT, 'text-color', clusterInk());
 }
 
 /* ── Init ────────────────────────────────────────────────────────────────── */

@@ -21,6 +21,7 @@ export const VARIANTS = [
   { n: '3', name: 'zine', note: 'rubik spray paint · bricolage · space mono — fotokopie' },
   { n: '4', name: 'galerie', note: 'sprat · instrument sans · dm mono — kunsthalle', feedFirst: true },
   { n: '5', name: 'terminal', note: 'recursive · departure mono — eine achse, drei rollen' },
+  { n: '6', name: 'cmyk', note: 'wie 1, aber das ui steht auf cyan · cluster wechseln die druckfarbe' },
 ];
 
 export const byId = (n) => VARIANTS.find((v) => v.n === String(n));
@@ -83,6 +84,8 @@ export function prefetchOthers() {
 }
 
 export function renderList(onPick) {
+  const total = document.getElementById('variantTotal');
+  if (total) total.textContent = String(VARIANTS.length);
   const ul = document.getElementById('varList');
   if (!ul) return;
   ul.replaceChildren();

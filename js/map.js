@@ -114,14 +114,43 @@ function clusterInk() {
   ];
 }
 
+/* Weiche Uebergaenge.
+ *
+ * Kameraflug: easeInOutCubic statt der linearen Voreinstellung — die Bewegung
+ * setzt sanft an und laeuft sanft aus, statt an beiden Enden zu rucken. */
+const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+/* Stapel loesen sich auf, statt zu verschwinden.
+ *
+ * MapLibre fragt Kacheln auf ganzzahligen Zoomstufen ab. Mit
+ * clusterMaxZoom 13 gibt es Gruppen also bis einschliesslich Kartenzoom
+ * 13.99 und ab 14.0 schlagartig nicht mehr — die Stapel waeren von einem
+ * Frame auf den naechsten weg.
+ *
+ * Der Uebergang liegt bewusst erst im LETZTEN Stueck davor. Ein frueherer
+ * Bogen (etwa ab 13.3) sieht auf dem Papier weicher aus, laesst die Gruppen
+ * aber schon bei Zoom 13.5 auf 69% verblassen — und das ist eine Stufe, auf
+ * der man normal stoebert und auf der die Stapel die einzige Darstellung von
+ * ~36 Sichtungen sind. Nachgemessen: bei 13.5 stehen dort acht Gruppen. */
+const CL_FADE = [13.7, 13.99];
+const clusterFade = () => [
+  'interpolate', ['linear'], ['zoom'],
+  CL_FADE[0], 1,
+  CL_FADE[1], 0,
+];
+
 /* Eine Stapelkarte soll ungefaehr so gross sein wie ein einzelner Sticker.
  * Die Bilder liegen mit pixelRatio 2 im Atlas, eine Karte ist 76 Atlas-px
  * breit — bei icon-size 1 also 38 CSS-px. */
+/* Am Ende geht der Stapel leicht auf, waehrend er ausblendet — das liest
+ * sich als "loest sich in einzelne Sticker auf" statt als "wird blass". */
 const clusterIconSize = () => [
   'interpolate', ['linear'], ['zoom'],
   3, 0.78,
   9, 0.95,
   13, 1.15,
+  CL_FADE[0], 1.15,
+  CL_FADE[1], 1.5,
 ];
 
 /* Alle 15 Stapelbilder registrieren. Muss nach jedem setStyle erneut
@@ -187,6 +216,12 @@ function installSpotLayers() {
       'icon-rotation-alignment': 'viewport',
       'icon-pitch-alignment': 'viewport',
     },
+    paint: {
+      'icon-opacity': clusterFade(),
+      /* Damit auch ein Wechsel per setPaintProperty weich laeuft und nicht
+       * springt. */
+      'icon-opacity-transition': { duration: 250, delay: 0 },
+    },
   });
 
   map.addLayer({
@@ -202,8 +237,13 @@ function installSpotLayers() {
       'text-ignore-placement': true,
     },
     /* Kein Versatz noetig: das Stapelbild ist so gebaut, dass die oberste
-     * Karte in der Bildmitte sitzt — die Zahl landet also genau darauf. */
-    paint: { 'text-color': clusterInk() },
+     * Karte in der Bildmitte sitzt — die Zahl landet also genau darauf.
+     * Die Zahl blendet mit dem Stapel aus, sonst schwebte sie kurz allein. */
+    paint: {
+      'text-color': clusterInk(),
+      'text-opacity': clusterFade(),
+      'text-opacity-transition': { duration: 250, delay: 0 },
+    },
   });
 
   if (stickerImage) addStickerLayer();
@@ -231,7 +271,12 @@ function addStickerLayer() {
       'icon-size': iconSizeExpr(),
       'icon-padding': 4,
     },
-    paint: { 'icon-opacity': 1 },
+    paint: {
+      'icon-opacity': 1,
+      /* Der ausgewaehlte Sticker wird unter dem DOM-Overlay ausgeblendet —
+       * mit Uebergang statt hartem Schnitt. */
+      'icon-opacity-transition': { duration: 200, delay: 0 },
+    },
   });
 }
 
@@ -458,18 +503,22 @@ export function syncSource() {
   if (src) src.setData(store.toGeoJSON());
 }
 
+/* Gemeinsame Flugkurve fuer alle Kamerabewegungen.
+ * `curve` steuert, wie weit die Kamera zwischendurch herauszoomt: 1.42 ist
+ * MapLibres Standard, etwas flacher wirkt bei kurzen Wegen ruhiger. */
+const FLY = { duration: 900, curve: 1.3, easing: easeInOutCubic, essential: true };
+
 export function flyToSpot(spot, zoom) {
   if (!map || !spot) return;
   map.flyTo({
+    ...FLY,
     center: [spot.lng, spot.lat],
     zoom: Math.max(zoom ?? 16, map.getZoom()),
-    duration: 900,
-    essential: true,
   });
 }
 
 export function flyTo(center, zoom = 15) {
-  map?.flyTo({ center, zoom, duration: 900, essential: true });
+  map?.flyTo({ ...FLY, center, zoom });
 }
 
 export const center = () => map?.getCenter();
@@ -482,8 +531,12 @@ export function refreshSizes() {
   if (map.getLayer(L_CLUSTER)) {
     map.setLayoutProperty(L_CLUSTER, 'icon-image', clusterImageExpr());
     map.setLayoutProperty(L_CLUSTER, 'icon-size', clusterIconSize());
+    map.setPaintProperty(L_CLUSTER, 'icon-opacity', clusterFade());
   }
-  if (map.getLayer(L_COUNT)) map.setPaintProperty(L_COUNT, 'text-color', clusterInk());
+  if (map.getLayer(L_COUNT)) {
+    map.setPaintProperty(L_COUNT, 'text-color', clusterInk());
+    map.setPaintProperty(L_COUNT, 'text-opacity', clusterFade());
+  }
 }
 
 /* ── Init ────────────────────────────────────────────────────────────────── */
@@ -499,6 +552,9 @@ export async function init(container) {
     minZoom: 1,
     maxZoom: 19,
     attributionControl: { compact: true },
+    /* Symbole, die durch Kollision wegfallen, blenden weich weg statt zu
+     * springen. Greift nicht bei icon-allow-overlap, schadet aber nie. */
+    fadeDuration: 250,
     dragRotate: false,
     pitchWithRotate: false,
     touchPitch: false,
@@ -554,9 +610,19 @@ export async function init(container) {
     if (!f) return;
     try {
       const z = await map.getSource(SRC).getClusterExpansionZoom(f.properties.cluster_id);
-      map.easeTo({ center: f.geometry.coordinates, zoom: z, duration: 560 });
+      map.easeTo({
+        center: f.geometry.coordinates,
+        zoom: z,
+        duration: 650,
+        easing: easeInOutCubic,
+      });
     } catch {
-      map.easeTo({ center: f.geometry.coordinates, zoom: map.getZoom() + 2 });
+      map.easeTo({
+        center: f.geometry.coordinates,
+        zoom: map.getZoom() + 2,
+        duration: 650,
+        easing: easeInOutCubic,
+      });
     }
   });
 

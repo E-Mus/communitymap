@@ -16,7 +16,7 @@
  */
 
 import { baseStyle, emptyStyle } from './mapstyle.js';
-import { loadArtwork, squareImageData, ART_URL } from './sticker.js';
+import { loadArtwork, squareImageData, buildStackImage, ART_URL } from './sticker.js';
 import { stickOn } from './peel.js';
 import * as store from './store.js';
 import { emit } from './bus.js';
@@ -67,32 +67,80 @@ function resolveColor(name, fallback) {
   return v && v !== 'rgba(0, 0, 0, 0)' ? v : fallback;
 }
 
-/* Cluster nach Anzahl: kleine Gruppen gelb, mittlere magenta, grosse cyan.
- * Die Textfarbe wandert zwingend mit — gelbe Zahl auf gelber Blase waere
- * unsichtbar, und Schwarz auf Magenta liegt bei nur ~3.6:1. */
-const CL_BREAK = [10, 50];
-function clusterColor() {
-  return [
-    'step', ['get', 'point_count'],
-    resolveColor('--cl-1', M), CL_BREAK[0],
-    resolveColor('--cl-2', M), CL_BREAK[1],
-    resolveColor('--cl-3', M),
-  ];
-}
+/* Zusammengefasste Gruppen sind ein STAPEL Sticker, kein Punkt.
+ *
+ * Zwei Dinge kodieren die Menge:
+ *   Farbe  — kleine Gruppen gelb, mittlere magenta, grosse cyan
+ *   Hoehe  — je mehr Sichtungen, desto mehr Lagen im Stapel
+ *
+ * Die Textfarbe wandert zwingend mit der Fuellfarbe — gelbe Zahl auf gelber
+ * Karte waere weg, und Schwarz auf Magenta liegt bei nur ~3.6:1.
+ *
+ * Weil ein Symbol-Layer sein Bild ueber einen Namen waehlt, werden alle
+ * Kombinationen einmal vorgebacken (3 Farben x 5 Hoehen = 15 kleine Bilder)
+ * und per Ausdruck zusammengesetzt: "stack-<hoehe>-<farbe>". */
+const CL_BREAK = [10, 50]; // Farbstufen
+const CL_TIERS = [
+  { key: 'y', fill: '--cl-1', ink: '--cl-1-ink' },
+  { key: 'm', fill: '--cl-2', ink: '--cl-2-ink' },
+  { key: 'c', fill: '--cl-3', ink: '--cl-3-ink' },
+];
+const CL_HEIGHT = [5, 15, 40, 100]; // Stapelstufen -> 1..5 Lagen
+
+const clusterTierExpr = () => [
+  'step', ['get', 'point_count'],
+  CL_TIERS[0].key, CL_BREAK[0],
+  CL_TIERS[1].key, CL_BREAK[1],
+  CL_TIERS[2].key,
+];
+
+const clusterLevelExpr = () => [
+  'step', ['get', 'point_count'],
+  '1', CL_HEIGHT[0],
+  '2', CL_HEIGHT[1],
+  '3', CL_HEIGHT[2],
+  '4', CL_HEIGHT[3],
+  '5',
+];
+
+const clusterImageExpr = () => ['concat', 'stack-', clusterLevelExpr(), '-', clusterTierExpr()];
+
 function clusterInk() {
   return [
     'step', ['get', 'point_count'],
-    resolveColor('--cl-1-ink', Y), CL_BREAK[0],
-    resolveColor('--cl-2-ink', Y), CL_BREAK[1],
-    resolveColor('--cl-3-ink', Y),
+    resolveColor(CL_TIERS[0].ink, Y), CL_BREAK[0],
+    resolveColor(CL_TIERS[1].ink, Y), CL_BREAK[1],
+    resolveColor(CL_TIERS[2].ink, Y),
   ];
 }
-const clusterRadius = () => [
-  'step', ['get', 'point_count'],
-  16, CL_BREAK[0],
-  22, CL_BREAK[1],
-  29,
+
+/* Eine Stapelkarte soll ungefaehr so gross sein wie ein einzelner Sticker.
+ * Die Bilder liegen mit pixelRatio 2 im Atlas, eine Karte ist 76 Atlas-px
+ * breit — bei icon-size 1 also 38 CSS-px. */
+const clusterIconSize = () => [
+  'interpolate', ['linear'], ['zoom'],
+  3, 0.78,
+  9, 0.95,
+  13, 1.15,
 ];
+
+/* Alle 15 Stapelbilder registrieren. Muss nach jedem setStyle erneut
+ * laufen — addImage-Bilder ueberleben einen Stilwechsel nicht. */
+function registerStackImages() {
+  if (!map) return;
+  for (const tier of CL_TIERS) {
+    const fill = resolveColor(tier.fill, M);
+    for (let level = 1; level <= 5; level++) {
+      const id = `stack-${level}-${tier.key}`;
+      if (map.hasImage(id)) continue;
+      try {
+        map.addImage(id, buildStackImage({ extra: level, color: fill }), { pixelRatio: 2 });
+      } catch (err) {
+        console.warn('[map] addImage', id, err);
+      }
+    }
+  }
+}
 
 /* Das Atlas-Bild ist (256 + 2*13) breit und wird mit pixelRatio 2 registriert,
  * rendert also bei icon-size 1 mit halber Pixelbreite in CSS-px. */
@@ -125,14 +173,19 @@ function installSpotLayers() {
 
   map.addLayer({
     id: L_CLUSTER,
-    type: 'circle',
+    type: 'symbol',
     source: SRC,
     filter: ['has', 'point_count'],
-    paint: {
-      'circle-color': clusterColor(),
-      'circle-stroke-color': K,
-      'circle-stroke-width': 2,
-      'circle-radius': clusterRadius(),
+    layout: {
+      'icon-image': clusterImageExpr(),
+      'icon-size': clusterIconSize(),
+      /* Gruppen duerfen nie wegfallen — sonst fehlen auf der Weltkarte
+       * ganze Regionen, ohne dass irgendwo ein Fehler steht. */
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
+      'icon-anchor': 'center',
+      'icon-rotation-alignment': 'viewport',
+      'icon-pitch-alignment': 'viewport',
     },
   });
 
@@ -146,7 +199,10 @@ function installSpotLayers() {
       'text-font': ['Noto Sans Bold'], // GENAU EIN Font — Mehrfachstacks liefern 404
       'text-size': ['step', ['get', 'point_count'], 12, CL_BREAK[0], 13, CL_BREAK[1], 15],
       'text-allow-overlap': true,
+      'text-ignore-placement': true,
     },
+    /* Kein Versatz noetig: das Stapelbild ist so gebaut, dass die oberste
+     * Karte in der Bildmitte sitzt — die Zahl landet also genau darauf. */
     paint: { 'text-color': clusterInk() },
   });
 
@@ -180,7 +236,9 @@ function addStickerLayer() {
 }
 
 function registerImage() {
-  if (!map || !stickerImage || map.hasImage('noe')) return;
+  if (!map) return;
+  registerStackImages();
+  if (!stickerImage || map.hasImage('noe')) return;
   try {
     map.addImage('noe', stickerImage, { pixelRatio: 2 });
   } catch (err) {
@@ -417,13 +475,13 @@ export function flyTo(center, zoom = 15) {
 export const center = () => map?.getCenter();
 export const canvasEl = () => map?.getCanvasContainer();
 
-/** Variante gewechselt: Sticker-Groesse und Clusterfarben koennen andere sein. */
+/** Nach einem Stilwechsel: Groessen und Clusterfarben neu setzen. */
 export function refreshSizes() {
   if (!map) return;
   if (map.getLayer(L_STICK)) map.setLayoutProperty(L_STICK, 'icon-size', iconSizeExpr());
   if (map.getLayer(L_CLUSTER)) {
-    map.setPaintProperty(L_CLUSTER, 'circle-color', clusterColor());
-    map.setPaintProperty(L_CLUSTER, 'circle-radius', clusterRadius());
+    map.setLayoutProperty(L_CLUSTER, 'icon-image', clusterImageExpr());
+    map.setLayoutProperty(L_CLUSTER, 'icon-size', clusterIconSize());
   }
   if (map.getLayer(L_COUNT)) map.setPaintProperty(L_COUNT, 'text-color', clusterInk());
 }

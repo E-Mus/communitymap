@@ -54,6 +54,66 @@ export function squareImageData(img, size = ATLAS_PX) {
 }
 
 /**
+ * Ein Stapel Sticker — fuer zusammengefasste Gruppen auf der Karte.
+ *
+ * Statt eines Punktes liegen mehrere Rechtecke leicht versetzt uebereinander:
+ * je mehr Sichtungen in der Gruppe, desto hoeher der Stapel. Die Zahl selbst
+ * zeichnet ein eigener Text-Layer auf die oberste Karte.
+ *
+ * Wichtig fuer die Positionierung: das Bild wird so aufgebaut, dass die
+ * OBERSTE Karte genau in der Bildmitte sitzt. Damit landet sie bei
+ * icon-anchor "center" auf der Koordinate, und die Zahl braucht keinen
+ * Versatz — der Stapel waechst nach unten weg.
+ *
+ * Alle Karten haben dieselbe Fuellfarbe; getrennt werden sie allein durch
+ * die schwarzen Konturen. Eine zweite Farbe fuer die unteren Lagen waere
+ * huebsch, braeuchte aber entweder Weiss (gehoert der Karte) oder einen
+ * Grauton (gibt es nicht).
+ *
+ * @param {object}  o
+ * @param {number}  o.extra   zusaetzliche Lagen unter der obersten (0..n)
+ * @param {string}  o.color   Fuellfarbe
+ * @param {number} [o.size]   Kantenlaenge einer Karte in Atlas-Pixeln
+ * @returns {ImageData}
+ */
+export function buildStackImage({ extra = 0, color = '#C4007A', size = 76 } = {}) {
+  const STEP = 9; // Versatz pro Lage nach unten
+  const JIT = 5; // seitlicher Versatz, damit es nicht wie ein Balken wirkt
+  const BORDER = 3;
+
+  const depth = extra * STEP;
+  const w = size + JIT * 2 + BORDER * 2;
+  const h = size + depth * 2 + BORDER * 2; // symmetrisch: oberste Karte mittig
+
+  const cv = document.createElement('canvas');
+  cv.width = w;
+  cv.height = h;
+  const ctx = cv.getContext('2d');
+
+  const topY = BORDER + depth;
+  const cx = w / 2;
+
+  /* Von unten nach oben zeichnen, damit die oberste zuletzt kommt. */
+  for (let i = extra; i >= 0; i--) {
+    const y = topY + i * STEP;
+    const dx = i === 0 ? 0 : (i % 2 ? JIT : -JIT) * (i / extra || 0);
+    const x = cx - size / 2 + dx;
+    ctx.fillStyle = color;
+    ctx.fillRect(Math.round(x), Math.round(y), size, size);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = BORDER;
+    ctx.strokeRect(
+      Math.round(x) + BORDER / 2,
+      Math.round(y) + BORDER / 2,
+      size - BORDER,
+      size - BORDER
+    );
+  }
+
+  return ctx.getImageData(0, 0, w, h);
+}
+
+/**
  * Entfernt den Hintergrund per Flood-Fill von allen vier Raendern.
  * @param {HTMLImageElement} img
  * @param {number} tol Farbabstand, ab dem ein Pixel NICHT mehr als Hintergrund gilt

@@ -96,12 +96,12 @@
     --ui-bg: var(--c);
     --ui-card: var(--c);
 
-    /* Cluster nach Grösse: klein gelb, mittel magenta, gross cyan.
+    /* Gruppen nach Grösse: cyan wenige, gelb viele, magenta sehr viele.
        Die Zahl wechselt zwingend mit — Gelb auf Gelb wäre weg, und Schwarz
-       auf Magenta liegt bei nur ~3.6:1. So sind es 18:1 / 5.6:1 / 6.2:1. */
-    --cl-1: var(--y);   --cl-1-ink: var(--k);
-    --cl-2: var(--m);   --cl-2-ink: var(--y);
-    --cl-3: var(--c);   --cl-3-ink: var(--k);
+       auf Magenta liegt bei nur ~3.6:1. So sind es 6.2:1 / 18:1 / 5.6:1. */
+    --cl-1: var(--c);   --cl-1-ink: var(--k);
+    --cl-2: var(--y);   --cl-2-ink: var(--k);
+    --cl-3: var(--m);   --cl-3-ink: var(--y);
   }
 
   .coords {

@@ -272,7 +272,8 @@
   .pill--y { background: var(--y); }
   .pill--c { background: var(--c); }
   .pill--m { background: var(--m); color: var(--y); }
-  .pill--k { background: var(--k); color: var(--paper); }
+  /* Gelb auf Schwarz, nicht weiss — Weiss gehoert der Karte. */
+  .pill--k { background: var(--k); color: var(--y); }
   .pill--ghost { background: transparent; }
   .pill[aria-pressed="true"] { background: var(--k); color: var(--y); }
   .pill[disabled] { opacity: 0.4; cursor: not-allowed; }

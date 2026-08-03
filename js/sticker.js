@@ -1,21 +1,15 @@
-/* Das Nö-Artwork als Kartensymbol.
+/* Das Nö-Artwork.
  *
- * Zwei Schritte, beide EINMAL beim Start, danach kostenlos:
+ * Zwei Fassungen, beide einmalig beim Start erzeugt:
  *
- * 1. FREISTELLEN. noe.png ist ein Quadrat mit cyanfarbenem Hintergrund, kein
- *    freigestelltes Motiv. Unbehandelt wird daraus auf der Karte eine blaue
- *    Kachel statt eines Stickers. Ein Flood-Fill von den Raendern her nimmt
- *    genau den Aussenbereich weg — Cyan INNERHALB der Buchstaben (in den
- *    Punzen von N und ö) bleibt stehen, so wie es ein echter Stanzschnitt
- *    entlang der Aussenkontur auch tun wuerde.
+ * 1. QUADRAT — so wie das PNG ist, mit cyanem Grund. Das ist die Fassung
+ *    fuer die Karte: ein Sticker ist ein rechteckiges Stueck Papier, und
+ *    nur so laesst er sich ueberzeugend aufkleben (siehe js/peel.js).
  *
- * 2. STANZRAND. Der weisse Rand wird per Canvas gebacken, nicht als
- *    Live-Filter gerendert. Die Alternativen scheiden aus:
- *      - gestapelte filter: drop-shadow() sind exponentiell teuer: n
- *        verkettete Funktionen rendern 2^n-1 Schatten, weil jede die Ausgabe
- *        der vorherigen frisst. Vier sind schon 15.
- *      - ein SVG-feMorphology laeuft bei jedem Compositing-Schritt neu — auf
- *        einer schwenkenden Karte ist das Gift.
+ * 2. FREIGESTELLT — Hintergrund per Flood-Fill von den Raendern entfernt.
+ *    Nur fuers UI: als Logo im gelben Kopfband und in den Leerzustaenden
+ *    wuerde ein cyanes Kaestchen stoeren. Cyan INNERHALB der Buchstaben
+ *    bleibt stehen, wie bei einem Stanzschnitt entlang der Aussenkontur.
  */
 
 const ART_URL = 'noe.png';
@@ -24,7 +18,6 @@ const ART_URL = 'noe.png';
  * fuer etwas, das mit ~46 CSS-px gezeichnet wird. 256 @ pixelRatio 2 ergibt
  * 128 CSS-px — reichlich Reserve, und der Atlas laeuft nicht ueber. */
 const ATLAS_PX = 256;
-const RING = 14; /* Stanzrand in Atlas-Pixeln */
 
 let artPromise = null;
 let cutoutCanvas = null;
@@ -41,6 +34,23 @@ export function loadArtwork() {
     });
   }
   return artPromise;
+}
+
+/**
+ * Das unveraenderte Quadrat als ImageData — fuer map.addImage().
+ * Der Umweg ueber Canvas laundert nebenbei paletten-optimierte PNGs, bei
+ * denen addImage sonst ueber die erwartete Bytelaenge stolpert.
+ */
+export function squareImageData(img, size = ATLAS_PX) {
+  const s = size / Math.max(img.width, img.height);
+  const w = Math.round(img.width * s);
+  const h = Math.round(img.height * s);
+  const cv = document.createElement('canvas');
+  cv.width = w;
+  cv.height = h;
+  const ctx = cv.getContext('2d');
+  ctx.drawImage(img, 0, 0, w, h);
+  return ctx.getImageData(0, 0, w, h);
 }
 
 /**
@@ -85,12 +95,8 @@ export function cutout(img, { tol = 76, size = 512 } = {}) {
   /* Iterative Flood-Fill (kein Rekursions-Stackoverflow bei 512x512). */
   const seen = new Uint8Array(W * H);
   const stack = [];
-  for (let x = 0; x < W; x++) {
-    stack.push(x, x + (H - 1) * W);
-  }
-  for (let y = 0; y < H; y++) {
-    stack.push(y * W, y * W + W - 1);
-  }
+  for (let x = 0; x < W; x++) stack.push(x, x + (H - 1) * W);
+  for (let y = 0; y < H; y++) stack.push(y * W, y * W + W - 1);
 
   while (stack.length) {
     const idx = stack.pop();
@@ -114,8 +120,7 @@ export function cutout(img, { tol = 76, size = 512 } = {}) {
     for (let x = 1; x < W - 1; x++) {
       const idx = y * W + x;
       if (alpha[idx] === 0) continue;
-      const touchesHole =
-        !alpha[idx - 1] || !alpha[idx + 1] || !alpha[idx - W] || !alpha[idx + W];
+      const touchesHole = !alpha[idx - 1] || !alpha[idx + 1] || !alpha[idx - W] || !alpha[idx + W];
       if (!touchesHole) continue;
       const i = idx * 4;
       const dr = p[i] - ref[0];
@@ -131,62 +136,7 @@ export function cutout(img, { tol = 76, size = 512 } = {}) {
   return cv;
 }
 
-/**
- * Baut das Marker-Bild: freigestelltes Nö mit weissem Stanzrand.
- * @param {CanvasImageSource} src  Ergebnis von cutout()
- * @returns {ImageData} fuer map.addImage()
- */
-export function buildDieCut(src, { ring = RING, size = ATLAS_PX, color = '#ffffff' } = {}) {
-  const sw = src.width;
-  const sh = src.height;
-  const s = size / Math.max(sw, sh);
-  const w = Math.round(sw * s);
-  const h = Math.round(sh * s);
-
-  /* 1. Silhouette der Alphaform in der Randfarbe */
-  const sil = document.createElement('canvas');
-  sil.width = w;
-  sil.height = h;
-  const sc = sil.getContext('2d');
-  sc.drawImage(src, 0, 0, w, h);
-  sc.globalCompositeOperation = 'source-in';
-  sc.fillStyle = color;
-  sc.fillRect(0, 0, w, h);
-
-  /* 2. Silhouette in 24 Winkeln versetzt stempeln = gleichmaessige Kontur.
-   *    Mit 8 Schritten bekommt man sichtbare Kerben an den Diagonalen. */
-  const cv = document.createElement('canvas');
-  cv.width = w + ring * 2;
-  cv.height = h + ring * 2;
-  const ctx = cv.getContext('2d');
-  const STEPS = 24;
-  for (let i = 0; i < STEPS; i++) {
-    const a = (i / STEPS) * Math.PI * 2;
-    ctx.drawImage(sil, ring + Math.cos(a) * ring, ring + Math.sin(a) * ring);
-  }
-  /* Zweiter, engerer Ring schliesst Restluecken in konkaven Stellen */
-  for (let i = 0; i < STEPS; i++) {
-    const a = (i / STEPS) * Math.PI * 2;
-    ctx.drawImage(sil, ring + Math.cos(a) * ring * 0.55, ring + Math.sin(a) * ring * 0.55);
-  }
-
-  /* 3. Original obendrauf */
-  ctx.drawImage(src, ring, ring, w, h);
-
-  return ctx.getImageData(0, 0, cv.width, cv.height);
-}
-
-/** Data-URL derselben Grafik — fuer das DOM-Overlay, damit es pixelgleich ist. */
-export function dieCutURL(src, opts) {
-  const data = buildDieCut(src, opts);
-  const cv = document.createElement('canvas');
-  cv.width = data.width;
-  cv.height = data.height;
-  cv.getContext('2d').putImageData(data, 0, 0);
-  return cv.toDataURL('image/png');
-}
-
-/** Freigestelltes Nö ohne Stanzrand — fuer Logo, Feed und die Seed-Fotos. */
+/** Freigestelltes Nö als Data-URL — fuer Logo, Feed und die Seed-Fotos. */
 export function cutoutURL(src) {
   const cv = document.createElement('canvas');
   cv.width = src.width;
@@ -195,4 +145,4 @@ export function cutoutURL(src) {
   return cv.toDataURL('image/png');
 }
 
-export { ATLAS_PX, RING };
+export { ATLAS_PX, ART_URL };

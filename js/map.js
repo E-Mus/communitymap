@@ -16,7 +16,8 @@
  */
 
 import { baseStyle, emptyStyle } from './mapstyle.js';
-import { loadArtwork, cutout, buildDieCut, dieCutURL } from './sticker.js';
+import { loadArtwork, squareImageData, ART_URL } from './sticker.js';
+import { stickOn } from './peel.js';
 import * as store from './store.js';
 import { emit } from './bus.js';
 
@@ -265,16 +266,24 @@ function restorePaint() {
   if (map && map.getLayer(L_STICK)) setOverlaid(overlaidId);
 }
 
+/* Aufbau:  .ov  >  .ov__in  >  img
+ * Die Drehung sitzt auf .ov__in und nicht auf .ov, weil MapLibre das
+ * Marker-Element selbst per transform positioniert — eine eigene Drehung
+ * dort wuerde jeden Frame ueberschrieben. .ov__in ist ausserdem genau das
+ * Element, dessen Inhalt der Peel austauscht. */
 function makeOverlayEl(spot, cls) {
   const el = document.createElement('div');
   el.className = `ov ${cls}`;
-  el.style.setProperty('--rot', `${spot.rot || 0}deg`);
+  const inner = document.createElement('div');
+  inner.className = 'ov__in';
+  inner.style.setProperty('--rot', `${spot.rot || 0}deg`);
   const img = document.createElement('img');
   img.className = 'ov__img';
   img.src = overlayURL;
   img.alt = 'Nö';
   img.draggable = false;
-  el.append(img);
+  inner.append(img);
+  el.append(inner);
   return el;
 }
 
@@ -329,8 +338,14 @@ const twoFrames = () =>
     wait(400),
   ]);
 
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 /**
- * Der Sticker knallt auf die Karte und wird dann an den Symbol-Layer uebergeben.
+ * Der Sticker wird aufgeklebt und dann an den Symbol-Layer uebergeben.
+ *
+ * Die Animation ist ein rueckwaerts laufender Peel (js/peel.js): der Sticker
+ * startet hochgeklappt und legt sich flach auf die Karte.
+ *
  * Die Uebergabe ist der Teil, den man leicht falsch macht:
  *   setData() gibt ein Promise zurueck, das aufloest NACHDEM der Worker
  *   geparst hat — das ist das verlaessliche Signal. Danach zwei rAF, damit
@@ -342,13 +357,7 @@ export async function slap(spot) {
   if (!map) return;
   clearOverlay();
 
-  const el = makeOverlayEl(spot, 'ov--slap');
-  const ring = document.createElement('i');
-  ring.className = 'shock';
-  const ring2 = document.createElement('i');
-  ring2.className = 'shock shock--2';
-  el.append(ring, ring2);
-
+  const el = makeOverlayEl(spot, 'ov--placing');
   const m = new maplibregl.Marker({ element: el, anchor: 'center' })
     .setLngLat([spot.lng, spot.lat])
     .addTo(map);
@@ -360,18 +369,10 @@ export async function slap(spot) {
     /* egal */
   }
 
-  const app = document.getElementById('app');
-  if (app) {
-    app.dataset.hit = '1';
-    setTimeout(() => delete app.dataset.hit, 200);
+  /* Der Peel laeuft auf .ov__in, dem inneren Knoten mit der Drehung. */
+  if (!reducedMotion()) {
+    await stickOn(el.querySelector('.ov__in'), 720);
   }
-
-  /* Animation abwarten — aber niemals daran haengen bleiben. Ein Tabwechsel
-   * oder prefers-reduced-motion kann animationend verschlucken. */
-  await Promise.race([
-    new Promise((res) => el.addEventListener('animationend', res, { once: true })),
-    wait(900),
-  ]);
 
   const src = map.getSource(SRC);
   if (src) {
@@ -452,12 +453,15 @@ export async function init(container) {
   /* Artwork parallel zum Kartenstil laden. */
   loadArtwork()
     .then((img) => {
-      artImg = cutout(img); // Hintergrund freistellen, dann erst stanzen
-      stickerImage = buildDieCut(artImg);
-      overlayURL = dieCutURL(artImg);
+      /* Auf der Karte das unveraenderte Quadrat mit cyanem Grund — ein
+       * Sticker ist ein rechteckiges Stueck Papier, und nur so laesst er
+       * sich ueberzeugend aufkleben. */
+      artImg = img;
+      stickerImage = squareImageData(img);
+      overlayURL = ART_URL;
       registerImage();
       if (layersReady) addStickerLayer();
-      emit('artwork:ready', { cut: artImg });
+      emit('artwork:ready', { img });
     })
     .catch((err) => console.warn('[map]', err));
 

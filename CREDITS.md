@@ -25,6 +25,13 @@ Dann `http://localhost:8123` öffnen.
 | Geodaten | © [OpenStreetMap](https://www.openstreetmap.org/copyright)-Mitwirkende | ODbL |
 | Karten-Engine | [MapLibre GL JS 5.24.0](https://github.com/maplibre/maplibre-gl-js) | BSD-3-Clause |
 | Ortssuche | [Photon](https://photon.komoot.io) (Komoot) | Apache 2.0, keyless |
+| Peel-Effekt | [peel-js](https://github.com/andrewplummer/peel-js) (Andrew Plummer) | MIT |
+
+`vendor/peel.js` liegt unverändert bei (Lizenz: `vendor/LICENSE-peel.txt`). Die
+Bibliothek ist seit 2019 nicht mehr gepflegt, aber abhängigkeitsfrei und
+funktioniert. Das mitgelieferte `peel.css` wird bewusst **nicht** eingebunden —
+es enthält nur Demo-Farben, und ungeschichtetes Vendor-CSS würde unsere
+`@layer`-Regeln schlagen; die nötigen Strukturregeln stehen in `base.css`.
 
 Die Attribution unten rechts auf der Karte ist **Lizenzpflicht** und darf nicht
 entfernt werden. Sie ist nur in die Palette gestylt, nicht versteckt.
@@ -85,11 +92,20 @@ Drei Konsequenzen, die im Code stehen:
 
 ## Das Artwork
 
-`noe.png` (851×851) ist die Vorlage. Der cyanfarbene Hintergrund wird beim
-Start per Flood-Fill von den Rändern freigestellt — Cyan *innerhalb* der
-Buchstaben bleibt stehen, wie bei einem echten Stanzschnitt entlang der
-Außenkontur. Darum kommt ein weißer Rand, ebenfalls einmalig per Canvas
-gebacken.
+`noe.png` (851×851) wird in zwei Fassungen benutzt:
+
+- **Quadrat, unverändert** — auf der Karte. Ein Sticker ist ein rechteckiges
+  Stück Papier, und nur so lässt er sich überzeugend aufkleben.
+- **Freigestellt** — nur im UI (Logo, Leerzustände). Der cyane Grund wird beim
+  Start per Flood-Fill von den Rändern entfernt; Cyan *innerhalb* der
+  Buchstaben bleibt stehen, wie bei einem Stanzschnitt entlang der Außenkontur.
+
+Beim Setzen läuft ein **rückwärts abgespielter Peel**: der Sticker startet
+hochgeklappt und legt sich flach auf die Karte (`js/peel.js`). peel-js zeichnet
+Schatten und Reflexe als halbtransparente Verläufe — die sind abgeschaltet,
+weil sie über Cyan ein Dunkeltürkis und über Gelb ein Oliv ergäben. Die Tiefe
+tragen stattdessen die Geometrie und der harte Farbwechsel Vorderseite (cyan)
+zu Rückseite (gelb).
 
 ## Rechtstexte
 

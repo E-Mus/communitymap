@@ -294,6 +294,9 @@
     pointer-events: none;
   }
   .hud > * { pointer-events: auto; }
+  /* Bei offenem Menue hat der Menue-Button nichts mehr zu tun — dann weg
+     damit, statt einen wirkungslosen Knopf stehen zu lassen. */
+  .app[data-feed="open"] .hud__menu { display: none; }
   .hud__menu { display: grid; gap: 3px; align-content: center; padding: 0 10px; }
   .hud__menu span { display: block; inline-size: 16px; block-size: 2px; background: var(--k); }
   .hud__loc { font-size: 18px; }
@@ -429,11 +432,14 @@
   .search__results b { font-weight: var(--ui-weight); }
   .search__results small { display: block; font-family: var(--font-mono); font-size: 10px; opacity: 0.6; }
 
+  /* Die Reiter brauchen unten Luft und eine Kante, sonst klebt die erste
+     Karte direkt darunter und die Zeile liest sich als Teil der Liste. */
   .tabs {
     display: flex;
     gap: 6px;
-    padding: var(--pad) var(--pad) 0;
+    padding: var(--pad);
     flex-wrap: wrap;
+    border-block-end: var(--bw) solid var(--k);
   }
   .tab {
     padding: var(--pill-pad);
@@ -809,11 +815,19 @@
     position: relative;
     will-change: transform;
   }
+  /* Die Drehung sitzt hier und nicht auf .ov: MapLibre schreibt auf das
+     Marker-Element selbst jeden Frame ein transform. .ov__in ist ausserdem
+     genau der Knoten, dessen Inhalt der Peel austauscht. */
+  .ov__in {
+    inline-size: 100%;
+    block-size: 100%;
+    transform: rotate(var(--rot, 0deg));
+  }
   .ov__img {
     inline-size: 100%;
     block-size: 100%;
     object-fit: contain;
-    transform: rotate(var(--rot, 0deg));
+    display: block;
   }
   .ov--sel .ov__img { animation: pop 0.28s cubic-bezier(0.18, 0.86, 0.28, 1); }
   .ov--sel::after {
@@ -831,61 +845,48 @@
     border-radius: var(--radius);
     animation: pulse 1.6s ease-in-out infinite;
   }
+  /* Waehrend des Aufklebens darf die hochgeklappte Ecke ueber den Marker
+     hinausragen und ueber allem anderen liegen. */
+  .ov--placing { overflow: visible; z-index: 1000; }
 
-  /* Der Slap. 440ms gesamt, Aufprall bei 52%, Nachfedern kuerzer als der Anflug. */
-  .ov--slap { animation: slap 440ms cubic-bezier(0.18, 0.86, 0.28, 1) both; }
-  .ov--slap .ov__img { animation: squash 440ms cubic-bezier(0.16, 0.8, 0.3, 1) both; }
-
-  .shock {
+  /* ── Peel ─────────────────────────────────────────────────────────────── */
+  /* Strukturregeln fuer peel-js. Bewusst hier statt aus vendor/peel.css:
+     dessen "Some Defaults" sind Demo-Farben, und ungeschichtetes Vendor-CSS
+     wuerde jedes @layer schlagen. transform-origin: top left ist von der
+     Bibliothek vorausgesetzt, nicht optional. */
+  .peel { position: relative; inline-size: 100%; block-size: 100%; opacity: 0; }
+  .peel-ready { opacity: 1; }
+  .peel-svg-clip-element {
     position: absolute;
-    inset-block-start: 50%;
-    inset-inline-start: 50%;
-    inline-size: 90px;
-    aspect-ratio: 1;
-    border: 10px solid var(--y);
-    border-radius: var(--radius);
-    pointer-events: none;
-    animation: shock 420ms cubic-bezier(0.12, 0.72, 0.3, 1) forwards;
+    inset-block-start: -10000px;
+    inset-inline-start: -10000px;
+    inline-size: 1px;
+    block-size: 1px;
+    opacity: 0;
   }
-  .shock--2 { border-color: var(--c); animation-delay: 60ms; animation-duration: 520ms; }
-
-  /* Screen-Shake auf der UI-Huelle, NIE auf dem Karten-Canvas — das erzwaenge
-     sonst ein komplettes Tile-Repaint pro Frame. */
-  .app[data-hit] { animation: shake 170ms cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+  .peel-layer {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    z-index: 1;
+    user-select: none;
+    -webkit-user-select: none;
+    transform-origin: top left;
+  }
+  /* Unter dem Sticker liegt die Karte, kein Blatt Papier. */
+  .peel-bottom, .peel-top { background: transparent; }
+  .peel-top img { inline-size: 100%; block-size: 100%; object-fit: contain; display: block; }
+  /* Rueckseite: flaches Gelb. Ein durchscheinendes Spiegelbild waere huebsch,
+     erzeugt aber Mischtoene — hier traegt der harte Farbwechsel cyan/gelb. */
+  .peel-back { background: var(--y); }
+  .peel-back img { display: none; }
 }
 
 /* ─── KEYFRAMES ───────────────────────────────────────────────────────────── */
 @layer components {
-  @keyframes slap {
-    0%   { transform: translate3d(0, -20px, 0) scale(2.3); opacity: 0; }
-    14%  { opacity: 1; }
-    52%  { transform: translate3d(0, 0, 0) scale(0.84); }
-    68%  { transform: translate3d(0, 0, 0) scale(1.09); }
-    84%  { transform: translate3d(0, 0, 0) scale(0.965); }
-    100% { transform: translate3d(0, 0, 0) scale(1); }
-  }
   /* Nicht-uniform, auf dem inneren Bild — ueberlagert sich mit slap statt es
      zu ueberschreiben. Die Neigung laeuft dabei auf ihren Ruhewert zu. */
-  @keyframes squash {
-    0%   { transform: rotate(calc(var(--rot, 0deg) * 2.2)) scale(0.74, 1.32); }
-    46%  { transform: rotate(calc(var(--rot, 0deg) * 0.4)) scale(1.26, 0.72); }
-    66%  { transform: rotate(var(--rot, 0deg)) scale(0.94, 1.07); }
-    84%  { transform: rotate(var(--rot, 0deg)) scale(1.025, 0.98); }
-    100% { transform: rotate(var(--rot, 0deg)) scale(1, 1); }
-  }
-  @keyframes shock {
-    0%   { transform: translate(-50%, -50%) scale(0.18); opacity: 1; border-width: 10px; }
-    70%  { opacity: 0.5; }
-    100% { transform: translate(-50%, -50%) scale(2.9); opacity: 0; border-width: 1px; }
-  }
-  @keyframes shake {
-    0%, 100% { transform: translate3d(0, 0, 0); }
-    16% { transform: translate3d(-4px, 3px, 0); }
-    33% { transform: translate3d(3px, -3px, 0); }
-    50% { transform: translate3d(-3px, -2px, 0); }
-    66% { transform: translate3d(2px, 2px, 0); }
-    83% { transform: translate3d(-1px, 1px, 0); }
-  }
   @keyframes pop {
     0% { transform: rotate(var(--rot, 0deg)) scale(1); }
     45% { transform: rotate(var(--rot, 0deg)) scale(1.24); }

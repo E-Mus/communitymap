@@ -182,6 +182,11 @@
 <div class="fatal" id="fatal" hidden>etwas ist schiefgelaufen — <button id="fatalReload" type="button">neu laden</button></div>
 
 <script src="vendor/maplibre-gl.js"></script>
+<!-- peel-js (Andrew Plummer, MIT). Setzt window.Peel, muss also vor den
+     Modulen stehen. Das mitgelieferte peel.css binden wir bewusst NICHT ein —
+     es enthaelt nur Demo-Farben, und ungeschichtetes Vendor-CSS wuerde unsere
+     @layer-Regeln schlagen. Die noetigen Strukturregeln stehen in base.css. -->
+<script src="vendor/peel.js"></script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

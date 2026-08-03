@@ -113,13 +113,36 @@
   .tab { font-variation-settings: 'wdth' 70, 'wght' 700; }
   .cta { font-variation-settings: 'wdth' 85, 'wght' 800; }
 
-  /* ── Gliederung in Gelb ───────────────────────────────────────────────── */
-  .feed__head, .feed__foot { background: var(--y); }
+  /* ── Menü durchgehend cyan ────────────────────────────────────────────── */
+  /* Kopf und Fuss tragen keine eigene Farbe mehr, nur noch die schwarzen
+     Trennkanten — die Fläche bleibt eine. */
+  .feed__head, .feed__foot { background: var(--ui-bg); }
+
+  /* Das Detail behält sein gelbes Band: dort gliedert es Foto, Daten und
+     Aktionen voneinander, im Menü gäbe es nichts zu trennen. */
   .strip { background: var(--y); }
-  .like { background: var(--m); color: var(--y); }
-  .like[data-on] { background: var(--k); color: var(--y); }
 
   .cross__hint span { background: var(--y); }
+
+  /* ── Gewählt / aktiv ist GELB, nicht schwarz ──────────────────────────── */
+  .tab[aria-selected='true'] { background: var(--y); color: var(--k); }
+  .tab--admin[aria-selected='true'] { background: var(--y); color: var(--k); }
+
+  /* Ungeliked neutral, geliked gelb — so ist der Zustand die Farbe und nicht
+     der Knopf an sich. */
+  .like { background: var(--ui-card); color: var(--k); }
+  .like[data-on] { background: var(--y); color: var(--k); }
+
+  .pill[aria-pressed='true'] { background: var(--y); color: var(--k); }
+  .card[aria-selected='true'] { background: var(--y); }
+
+  /* ── Schliessen in Magenta ────────────────────────────────────────────── */
+  /* „Rot“ gibt es in CMYK nicht — Magenta IST die rote Druckfarbe. Ein echtes
+     Rot wäre eine vierte Farbe und würde die Palettenregel brechen. */
+  .feed__close,
+  .panel__close,
+  .lightbox__close,
+  .sheet__head .iconbtn { background: var(--m); color: var(--y); }
 
   /* Standort-Button in Magenta — er ist die einzige Aktion im HUD, die etwas
      über den Nutzer selbst weiss, und hebt sich so von den neutralen ab. */
@@ -183,27 +206,28 @@
     .cards { padding-block: 16px; }
   }
 
-  /* ── Desktop: echte Spalte, aber wegklappbar ──────────────────────────── */
+  /* ── Desktop ──────────────────────────────────────────────────────────── */
   @media (min-width: 900px) {
-    :root {
-      --areas: 'feed map';
-      --a-feed: feed;
-      --feed-w: 400px;
-      /* Zugeklappt hat die Spalte Breite 0 und der Feed steht daneben
-         übersetzt — die Karte bekommt den ganzen Platz. */
-      --cols: 0 1fr;
-    }
-    .app { transition: grid-template-columns 0.28s cubic-bezier(0.2, 0.9, 0.3, 1); }
-    .app[data-feed='open'] { --cols: var(--feed-w) 1fr; }
+    :root { --feed-w: 400px; }
+
+    /* Das Menü liegt ÜBER der Karte, nicht daneben.
+       Eine animierte Grid-Spalte hätte den Kartencontainer in jedem Frame
+       neu vermessen: MapLibre setzt daraufhin sein Canvas neu, die Karte
+       zappelt, und am rechten Rand blitzt für ein paar Frames die noch nicht
+       gezeichnete Fläche durch. Als Overlay bleibt die Karte unangetastet —
+       sie wird nur verdeckt. */
     .feed {
-      position: relative;
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: 0;
       inline-size: var(--feed-w);
-      /* Ohne das greift max-inline-size: 100% aus der Basis auf die beim
-         Zuklappen auf 0 geschrumpfte Spalte — der Feed wuerde sich zu einem
-         2px-Streifen zusammenquetschen und der Text waehrend der Animation
-         umbrechen, statt sauber nach links hinauszufahren. */
       max-inline-size: none;
     }
+
+    /* Die Kartenknöpfe rücken mit, damit sie nicht unter dem Menü liegen. */
+    .hud { transition: inset-inline-start 0.28s cubic-bezier(0.2, 0.9, 0.3, 1); }
+    .app[data-feed='open'] .hud { inset-inline-start: calc(var(--feed-w) + 14px); }
+
     .panel {
       inset-inline-start: auto;
       inline-size: min(440px, 42vw);

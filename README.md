@@ -15,15 +15,15 @@ Prototyp ohne Server: alles läuft im Browser, die eigenen Sichtungen liegen in
   Standort bzw. Fadenkreuz
 - Tags, optionales Foto, Likes, Melden (ab 3 Meldungen verborgen)
 - Ortssuche, Teilen-Link pro Sticker, Admin-Ansicht zum Löschen
-- **Sechs UI-Varianten** mit eigener Typografie *und* eigenem Layout —
-  umschaltbar über *stil* unten im Menü
+- Foto antippen zeigt es **groß**
+- **Impressum** und **Datenschutz** unter der Liste
 
 ## Ausprobieren
 
 | | |
 |---|---|
 | Sticker setzen | Finger eine halbe Sekunde auf die Karte halten |
-| Stil wechseln | Menü ☰ → unten *stil x/6* — **Stil 6** ist der CMYK-Stil |
+| Foto groß | im Detail auf das Bild tippen |
 | Admin | Menü ☰ → *admin* → Passwort `nö` |
 | Karte kaputt sehen | Flugmodus an, neu laden — schwarze Schraffur statt weiß |
 
@@ -52,6 +52,12 @@ Vanilla ES-Module, kein Build-Schritt, keine npm-Abhängigkeit.
 [MapLibre GL JS](https://maplibre.org) auf keylessen Vektorkacheln von
 [OpenFreeMap](https://openfreemap.org), Ortssuche über
 [Photon](https://photon.komoot.io).
+
+Schriften und die Kartenbibliothek liegen **lokal** in `fonts/` und `vendor/`,
+nicht auf einem CDN — Google Fonts hätte die IP jedes Besuchers an Google
+übertragen (in Deutschland ein bekanntes Abmahnrisiko), und ein CDN-Ausfall
+hätte die App lahmgelegt. Zur Laufzeit werden nur noch die Kartenkacheln
+geladen; die Ortssuche erst, wenn man wirklich sucht.
 
 Lizenzen, Schriften, Kartendaten und die bewussten Demo-Grenzen stehen in
 [CREDITS.md](CREDITS.md).

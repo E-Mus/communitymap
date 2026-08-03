@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="robots" content="noindex">
+<title>Impressum — NöMap</title>
+<link rel="icon" href="noe.png">
+<link href="css/base.css" rel="stylesheet">
+<link href="css/style.css" rel="stylesheet">
+<link href="css/legal.css" rel="stylesheet">
+</head>
+<body class="legal">
+
+<header class="legal__head">
+  <a class="legal__back" href="index.html">
+    <img class="noe" src="noe.png" alt="Nö" width="851" height="851">
+    <span>zurück zur karte</span>
+  </a>
+</header>
+
+<main class="legal__body">
+  <h1>Impressum</h1>
+
+  <p class="legal__todo" role="note">
+    <strong>Diese Seite ist noch nicht ausgefüllt.</strong>
+    Die Angaben unten sind Platzhalter. Ein Impressum darf nicht erfunden
+    werden — es muss die echten Daten des Anbieters enthalten. Bitte alle mit
+    <code>[…]</code> markierten Stellen ersetzen, bevor die Seite öffentlich
+    beworben oder verlinkt wird.
+  </p>
+
+  <h2>Angaben gemäß § 5 DDG</h2>
+  <p>
+    [Vor- und Nachname oder Firma]<br>
+    [Straße und Hausnummer]<br>
+    [PLZ und Ort]<br>
+    [Land]
+  </p>
+
+  <h2>Kontakt</h2>
+  <p>
+    E-Mail: [E-Mail-Adresse]<br>
+    Telefon: [optional, nur wenn vorhanden]
+  </p>
+
+  <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
+  <p>
+    [Vor- und Nachname]<br>
+    [Anschrift wie oben]
+  </p>
+
+  <h2>Hinweis zum Projekt</h2>
+  <p>
+    NöMap ist ein nicht-kommerzieller Prototyp ohne Server. Es werden keine
+    Nutzerkonten geführt und keine Beiträge zentral gespeichert. Einträge, die
+    du anlegst, verbleiben ausschließlich in deinem Browser.
+  </p>
+
+  <h2>Bildrechte</h2>
+  <p>
+    Das „Nö“-Motiv sowie die in der Demo angezeigten Beispielbilder stammen vom
+    Betreiber bzw. werden zur Laufzeit im Browser erzeugt. Kartendaten und
+    Schriften siehe <a href="datenschutz.html">Datenschutzerklärung</a> und die
+    Datei <code>CREDITS.md</code> im Quelltext.
+  </p>
+
+  <h2>Haftung für Inhalte und Links</h2>
+  <p>
+    Als Diensteanbieter sind wir für eigene Inhalte auf diesen Seiten nach den
+    allgemeinen Gesetzen verantwortlich. Wir sind jedoch nicht verpflichtet,
+    übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach
+    Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.
+  </p>
+  <p>
+    Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte
+    wir keinen Einfluss haben. Für diese fremden Inhalte kann keine Gewähr
+    übernommen werden. Für die Inhalte der verlinkten Seiten ist stets der
+    jeweilige Anbieter oder Betreiber verantwortlich.
+  </p>
+
+  <h2>Hinweis zu gemeldeten Inhalten</h2>
+  <p>
+    In dieser Demo werden gemeldete Einträge ausschließlich lokal im Browser
+    ausgeblendet. Eine zentrale Moderation findet nicht statt, weil es keinen
+    Server gibt. Bei einer produktiven Version wäre hier eine Kontaktstelle für
+    Beschwerden zu ergänzen.
+  </p>
+
+  <p class="legal__meta">Stand: <time datetime="2026-08-03">3. August 2026</time></p>
+</main>
+
+<footer class="legal__foot">
+  <a class="linkbtn" href="index.html">karte</a>
+  <a class="linkbtn" href="datenschutz.html">datenschutz</a>
+</footer>
+
+<!-- Das Nö freistellen — dieselbe Funktion wie in der App, damit es nur eine
+     Stelle gibt, an der der cyane PNG-Hintergrund entfernt wird. -->
+<script type="module">
+  import { loadArtwork, cutout, cutoutURL } from './js/sticker.js';
+  loadArtwork()
+    .then((img) => {
+      const url = cutoutURL(cutout(img));
+      for (const el of document.querySelectorAll('img.noe')) el.src = url;
+    })
+    .catch(() => {});
+</script>
+
+</body>
+</html>

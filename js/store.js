@@ -15,7 +15,6 @@ const K = {
   spots: 'noemap.v1.spots',
   liked: 'noemap.v1.liked',
   reported: 'noemap.v1.reported',
-  variant: 'noemap.v1.variant',
   admin: 'noemap.v1.admin',
 };
 
@@ -102,7 +101,6 @@ export const state = {
   selectedId: null,
   imported: null, // transient, aus einem geteilten Link — NIE im Store
   pending: null, // Sticker im Entstehen (Sheet offen)
-  variant: '1',
   admin: false,
   feedTab: 'neu',
   seedIds: new Set(),
@@ -124,7 +122,6 @@ export function init() {
 
   state.liked = new Set(readKey(K.liked, []));
   state.reported = new Set(readKey(K.reported, []));
-  state.variant = String(readKey(K.variant, '1'));
   state.admin = readKey(K.admin, false) === true;
 
   return { volatile };
@@ -242,15 +239,6 @@ export function toggleReport(id) {
   const hidden = isHidden(s);
   emit(hidden ? 'spots:changed' : 'spot:report', { id, reports: s.reports, hidden });
   return { reports: s.reports, hidden };
-}
-
-export function setVariant(n) {
-  state.variant = String(n);
-  try {
-    writeKey(K.variant, state.variant);
-  } catch {
-    /* egal */
-  }
 }
 
 export function setAdmin(on) {

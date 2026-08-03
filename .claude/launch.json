@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "noemap",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["/Users/yoann/Desktop/NöMap/test2/.claude/serve.cjs"],
+      "port": 8123
+    }
+  ]
+}

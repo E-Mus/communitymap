@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de" data-variant="1">
+<html lang="de">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -10,10 +10,12 @@
 <link rel="icon" href="noe.png">
 <link rel="apple-touch-icon" href="noe.png">
 
-<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css" rel="stylesheet">
+<!-- MapLibre liegt lokal in vendor/, nicht auf einem CDN: jeder CDN-Abruf
+     wuerde die IP der Besucher an einen weiteren Dritten uebertragen, und die
+     App waere tot, sobald das CDN ausfaellt. Version 5.24.0, BSD-3-Clause. -->
+<link href="vendor/maplibre-gl.css" rel="stylesheet">
 <link href="css/base.css" rel="stylesheet">
-<!-- Wird von variants.js ausgetauscht. Nur die aktive Variante laedt ihre Schriften. -->
-<link href="css/v1.css" rel="stylesheet" id="variant-css">
+<link href="css/style.css" rel="stylesheet">
 </head>
 <body>
 
@@ -52,7 +54,8 @@
 
     <footer class="feed__foot">
       <button class="linkbtn" id="adminBtn" type="button">admin</button>
-      <button class="linkbtn" id="variantBtn" type="button">stil <span id="variantNum">1</span>/<span id="variantTotal">6</span></button>
+      <a class="linkbtn" href="impressum.html">impressum</a>
+      <a class="linkbtn" href="datenschutz.html">datenschutz</a>
       <p class="meter" id="meter"></p>
       <p class="disclaimer">
         demo ohne server — die vorhandenen sichtungen und ihre likes sind erfunden,
@@ -106,7 +109,7 @@
 
     <button class="iconbtn panel__close" id="panelClose" type="button" aria-label="Schliessen">✕</button>
 
-    <figure class="shot" id="panelShot"></figure>
+    <figure class="shot" id="panelShot" tabindex="-1"></figure>
 
     <div class="strip">
       <button class="like" id="likeBtn" type="button" data-like-for="">
@@ -168,19 +171,17 @@
   <button class="cta cta--wide" id="adminGo" type="button">anmelden</button>
 </section>
 
-<!-- VARIANTEN -->
-<section class="sheet sheet--sm" id="varSheet" hidden aria-label="Stil wählen">
-  <header class="sheet__head">
-    <h2 class="sheet__title">stil</h2>
-    <button class="iconbtn" id="varClose" type="button" aria-label="Schliessen">✕</button>
-  </header>
-  <ul class="varlist" id="varList"></ul>
-</section>
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Foto gross">
+  <button class="iconbtn lightbox__close" id="lightboxClose" type="button" aria-label="Schliessen">✕</button>
+  <img id="lightboxImg" alt="">
+  <p class="lightbox__meta" id="lightboxMeta"></p>
+</div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <div class="fatal" id="fatal" hidden>etwas ist schiefgelaufen — <button id="fatalReload" type="button">neu laden</button></div>
 
-<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<script src="vendor/maplibre-gl.js"></script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -35,35 +35,25 @@ sichtbaren Fehlerfläche statt mit einer weißen Karte — siehe unten.
 
 ## Schriften
 
-Alle SIL OFL 1.1 oder MIT, alle direkt per CDN mit CORS eingebunden.
-Es lädt immer nur die Variante, die gerade aktiv ist.
+Alle SIL OFL 1.1, **selbst gehostet** in `fonts/` (Lizenztexte: `fonts/OFL-*.txt`).
 
-| Variante | Display | UI | Mono |
-|---|---|---|---|
-| 1 · prototyp | **Anybody** — Etcetera Type Co. | **Archivo** — Omnibus-Type | **Martian Mono** — Evil Martians |
-| 2 · hi-vis | **Messapia** — Luca Marsano | **Apfel Grotezk** — Collletttivo | **Necto Mono** — Marco Condello |
-| 3 · zine | **Rubik Spray Paint** | **Bricolage Grotesque** — Mathieu Triay | **Space Mono** — Colophon |
-| 4 · galerie | **Sprat** — Ethan Nakache | **Instrument Sans** | **DM Mono** |
-| 5 · terminal | **Recursive** — Arrow Type (Stephen Nixon) | *dieselbe* | **Departure Mono** — Helena Zhang (MIT) |
-| 6 · cmyk | wie 1: **Anybody** | **Archivo** | **Martian Mono** |
+| Rolle | Schrift | Designer |
+|---|---|---|
+| Display | **Anybody** (`wdth` 50–150) | Etcetera Type Co. |
+| UI | **Archivo** (`wdth` 62–125) | Omnibus-Type |
+| Mono | **Martian Mono** (`wdth` 75–112.5) | Evil Martians |
 
-Stil 6 ist Stil 1 zu Ende gedacht: dort war die Fläche weiss mit CMYK-Akzenten,
-hier ist CMYK der Grundton. Das UI steht auf Cyan, gegliedert wird mit Gelb,
-akzentuiert mit Magenta; die Cluster wechseln die Druckfarbe mit der
-Gruppengrösse (gelb unter 10, magenta bis 49, cyan darüber — die Zahl wechselt
-zwingend mit, sonst wäre Gelb auf Gelb weg). Auf dem Handy nimmt das Menü den
-ganzen Schirm ein.
+Hierarchie über *Breite* statt Gewicht — alle drei haben eine Width-Achse.
 
-Quellen: Google Fonts, [Collletttivo](https://www.collletttivo.it) (über
-jsDelivr), [Departure Mono](https://departuremono.com).
+Bewusst **nicht** über Google Fonts eingebunden: der CDN-Abruf überträgt die
+IP jedes Besuchers an Google, was in Deutschland als DSGVO-Verstoß gilt
+(LG München I, Az. 3 O 17493/20). Selbst gehostet ist es außerdem schneller —
+gleiche Herkunft, kein zusätzlicher DNS- und TLS-Aufbau. Geladen werden nur
+die `latin`-Subsets (~185 KB); `latin-ext` holt der Browser nur bei Bedarf.
 
-> **Velvetyne** wäre für diesen Look naheliegend gewesen (Karrik, Le Murmure,
-> Pilowlava) und ist bewusst *nicht* dabei: die Dateien liegen auf GitLab, das
-> keinen `access-control-allow-origin`-Header sendet, und der Download-Link der
-> Website liefert eine HTML-Zwischenseite statt einer ZIP. Man müsste sie von
-> Hand herunterladen und mitliefern — für eine Demo ohne Build-Schritt zu
-> fragil. Falls das gewünscht ist: `.woff2` in `fonts/` legen, `@font-face` in
-> der jeweiligen `vN.css` umbiegen, `OFL.txt` daneben.
+Aus demselben Grund liegt auch **MapLibre GL JS 5.24.0** lokal in `vendor/`
+statt auf jsDelivr — das entfernt einen weiteren Dritten und einen
+Ausfallpunkt.
 
 ## Farbregel
 
@@ -74,14 +64,14 @@ Schwarz** — Weiß und Grau sind der Karte vorbehalten (`#ffffff` Papier,
 Prüfbar, nicht nur versprochen:
 
 ```bash
-grep -nE '^\s*--(c|m|y|k|paper|block|label|water):' css/v*.css   # muss leer sein
+grep -nE '^\s*--(c|m|y|k|paper|block|label|water):' css/style.css css/legal.css   # muss leer sein
 ```
 
-Zwei Konsequenzen, die im Code stehen:
+Drei Konsequenzen, die im Code stehen:
 
 - **Kein echter Überdruck.** `multiply` von Cyan über Gelb ist Grün, über
-  Magenta ein dunkles Blau. Passerversatz gibt es deshalb nur als ≤2 px Kante
-  an Überschriften (Variante 3), nie als Fläche.
+  Magenta ein dunkles Blau. Deshalb gibt es keine überlagerten Druckfarben —
+  Flächen stehen nebeneinander, nicht übereinander.
 - **Das Halbtonraster der Demo-Fotos ist immer Schwarz-auf-Farbe oder
   Farbe-auf-Weiß**, nie Farbe-auf-Farbe, und besteht aus ganzzahligen
   Rechtecken statt antialiaster Kreise. Sonst mischt entweder das Antialiasing
@@ -100,6 +90,26 @@ Start per Flood-Fill von den Rändern freigestellt — Cyan *innerhalb* der
 Buchstaben bleibt stehen, wie bei einem echten Stanzschnitt entlang der
 Außenkontur. Darum kommt ein weißer Rand, ebenfalls einmalig per Canvas
 gebacken.
+
+## Rechtstexte
+
+`impressum.html` und `datenschutz.html` liegen im selben Stil daneben und sind
+aus dem Menüfuß verlinkt.
+
+> **Das Impressum ist absichtlich unausgefüllt.** Es enthält nur mit `[…]`
+> markierte Platzhalter und einen deutlich sichtbaren Hinweis darauf. Ein
+> Impressum muss die echten Daten des Anbieters nennen — erfundene Angaben
+> wären schlimmer als gar keine. Bitte vor jeder öffentlichen Bewerbung
+> ausfüllen.
+
+Die **Datenschutzerklärung** ist dagegen inhaltlich vollständig und beschreibt
+den tatsächlichen Stand: keine Cookies, kein Tracking, alles im `localStorage`;
+IP-Übertragung nur an GitHub Pages (Hosting), OpenFreeMap (Kachelabruf) und —
+ausschließlich bei aktiver Eingabe — Photon (Ortssuche). Prüfbar:
+
+```bash
+grep -rhoE 'https://[a-zA-Z0-9.-]+' index.html css/*.css js/*.js | sort -u
+```
 
 ## Bewusste Demo-Grenzen
 

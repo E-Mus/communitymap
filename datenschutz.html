@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="robots" content="noindex">
+<title>Datenschutz — NöMap</title>
+<link rel="icon" href="noe.png">
+<link href="css/base.css" rel="stylesheet">
+<link href="css/style.css" rel="stylesheet">
+<link href="css/legal.css" rel="stylesheet">
+</head>
+<body class="legal">
+
+<header class="legal__head">
+  <a class="legal__back" href="index.html">
+    <img class="noe" src="noe.png" alt="Nö" width="851" height="851">
+    <span>zurück zur karte</span>
+  </a>
+</header>
+
+<main class="legal__body">
+  <h1>Datenschutz</h1>
+
+  <p class="legal__lead">
+    Kurz vorweg: NöMap hat keinen Server. Alles, was du einträgst, bleibt in
+    deinem Browser. Es gibt keine Konten, keine Cookies, keine Analyse-Werkzeuge
+    und kein Tracking. Drei Dienste bekommen technisch bedingt deine
+    IP-Adresse zu sehen — welche das sind, steht unten.
+  </p>
+
+  <h2>Verantwortlicher</h2>
+  <p>
+    Siehe <a href="impressum.html">Impressum</a>.
+  </p>
+
+  <h2>Was im Browser bleibt</h2>
+  <p>
+    Deine Sichtungen, deine Likes, deine Meldungen und der Admin-Zustand werden
+    im <em>localStorage</em> deines Browsers gespeichert. Diese Daten werden
+    <strong>nicht übertragen</strong> — es gibt keine Stelle, an die sie gehen
+    könnten. Auch Fotos, die du hinzufügst, verlassen dein Gerät nicht; sie
+    werden im Browser verkleinert und dort abgelegt.
+  </p>
+  <p>
+    Du löschst diese Daten, indem du die Website-Daten für diese Seite in
+    deinen Browsereinstellungen entfernst. Ein Konto, das man kündigen müsste,
+    gibt es nicht.
+  </p>
+
+  <h2>Standort</h2>
+  <p>
+    Wenn du auf den Standort-Button tippst, fragt dein Browser dich um
+    Erlaubnis und ermittelt deine Position. Diese Position wird ausschließlich
+    lokal verwendet, um die Karte zu bewegen bzw. einen Pin vorzubelegen. Sie
+    wird an niemanden gesendet. Ohne deine ausdrückliche Erlaubnis passiert
+    gar nichts; die Abfrage erfolgt nie automatisch beim Seitenaufruf.
+  </p>
+
+  <h2>Wer deine IP-Adresse sieht</h2>
+  <p>
+    Jeder Abruf einer Datei aus dem Internet überträgt technisch bedingt die
+    IP-Adresse an den jeweiligen Server. Das lässt sich nicht vermeiden, wenn
+    Inhalte geladen werden sollen. Wir binden bewusst so wenige fremde Stellen
+    ein wie möglich — Schriften und die Kartenbibliothek liegen deshalb auf
+    unserem eigenen Server statt auf einem CDN.
+  </p>
+
+  <h3>1. GitHub Pages (Hosting)</h3>
+  <p>
+    Die Seite wird von GitHub Pages ausgeliefert, einem Dienst der GitHub Inc.,
+    88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA. Beim Aufruf
+    überträgt dein Browser IP-Adresse, Zeitpunkt und angeforderte Datei; GitHub
+    verarbeitet diese Daten zur Auslieferung und Absicherung.
+    <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement"
+       target="_blank" rel="noopener noreferrer">Datenschutzerklärung von GitHub</a>
+  </p>
+
+  <h3>2. OpenFreeMap (Kartenkacheln)</h3>
+  <p>
+    Die Karte besteht aus Vektorkacheln von
+    <a href="https://openfreemap.org" target="_blank" rel="noopener noreferrer">OpenFreeMap</a>,
+    einem freien Dienst ohne Registrierung und ohne API-Schlüssel. Beim Bewegen
+    der Karte werden Kacheln von <code>tiles.openfreemap.org</code> geladen;
+    dabei werden IP-Adresse und der jeweils angeforderte Kartenausschnitt
+    übertragen. Aus dem Ausschnitt lässt sich ableiten, welche Gegend du dir
+    ansiehst. Die Kartendaten stammen von OpenStreetMap (ODbL).
+  </p>
+
+  <h3>3. Photon / Komoot (nur bei Ortssuche)</h3>
+  <p>
+    Wenn — und nur wenn — du das Suchfeld benutzt, wird dein Suchbegriff an
+    <a href="https://photon.komoot.io" target="_blank" rel="noopener noreferrer">photon.komoot.io</a>
+    gesendet, betrieben von der komoot GmbH. Übertragen werden dein Suchtext
+    und deine IP-Adresse. Tippst du nichts ein, findet keine Anfrage statt.
+    Koordinaten-Eingaben wie <code>52.512, 13.453</code> werden lokal
+    ausgewertet und gar nicht erst verschickt.
+  </p>
+
+  <p class="legal__note">
+    <strong>Nicht eingebunden:</strong> Google Fonts, Google Analytics, Meta,
+    Werbe- oder Tracking-Netzwerke, Cookie-Banner, Consent-Tools. Die Schriften
+    (Anybody, Archivo, Martian Mono) liegen unter <code>/fonts/</code> auf
+    demselben Server wie die Seite — es besteht keine Verbindung zu Google.
+  </p>
+
+  <h2>Rechtsgrundlage</h2>
+  <p>
+    Die unter Punkt 1 und 2 genannten Übertragungen sind für den Betrieb der
+    Seite technisch erforderlich; Rechtsgrundlage ist Art. 6 Abs. 1 lit. f
+    DSGVO (berechtigtes Interesse an einer funktionsfähigen, sicher
+    ausgelieferten Website). Die Ortssuche (Punkt 3) erfolgt nur auf deine
+    aktive Eingabe hin. Für die Standortabfrage gibst du deine Einwilligung
+    direkt im Browserdialog (Art. 6 Abs. 1 lit. a DSGVO).
+  </p>
+
+  <h2>Was du beim Teilen bedenken solltest</h2>
+  <p>
+    Ein Teilen-Link enthält die Koordinaten der Sichtung im Klartext. Wer den
+    Link bekommt, sieht also den Ort. Wenn du einen Sticker an deinem eigenen
+    Standort einträgst und den Link weitergibst, verrätst du damit, wo du warst.
+    Das ist kein Fehler, sondern der Zweck der Karte — aber es ist gut, es zu
+    wissen.
+  </p>
+
+  <h2>Deine Rechte</h2>
+  <p>
+    Dir stehen die Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung
+    der Verarbeitung, Datenübertragbarkeit und Widerspruch zu (Art. 15–21
+    DSGVO) sowie ein Beschwerderecht bei einer Aufsichtsbehörde. Praktisch gilt
+    dabei: Wir speichern selbst keine personenbezogenen Daten über dich, weil
+    es keinen Server gibt, auf dem das möglich wäre. Für die Server-Logfiles
+    der oben genannten Dienste wende dich bitte an den jeweiligen Anbieter.
+  </p>
+
+  <h2>Keine Cookies</h2>
+  <p>
+    Diese Seite setzt keine Cookies. Der verwendete <em>localStorage</em> ist
+    kein Cookie und wird nicht an Server übermittelt; er dient allein dazu,
+    deine eigenen Einträge über einen Seitenneuladen hinweg zu behalten. Ein
+    Einwilligungsbanner ist daher nicht erforderlich.
+  </p>
+
+  <p class="legal__meta">Stand: <time datetime="2026-08-03">3. August 2026</time></p>
+</main>
+
+<footer class="legal__foot">
+  <a class="linkbtn" href="index.html">karte</a>
+  <a class="linkbtn" href="impressum.html">impressum</a>
+</footer>
+
+<!-- Das Nö freistellen — dieselbe Funktion wie in der App, damit es nur eine
+     Stelle gibt, an der der cyane PNG-Hintergrund entfernt wird. -->
+<script type="module">
+  import { loadArtwork, cutout, cutoutURL } from './js/sticker.js';
+  loadArtwork()
+    .then((img) => {
+      const url = cutoutURL(cutout(img));
+      for (const el of document.querySelectorAll('img.noe')) el.src = url;
+    })
+    .catch(() => {});
+</script>
+
+</body>
+</html>

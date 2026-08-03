@@ -215,12 +215,14 @@ export function renderDetail(spot, { imported = false } = {}) {
   fig.replaceChildren();
   const src = imported ? null : photoSrc(spot, 720);
   if (src) {
-    fig.className = 'shot';
+    fig.className = 'shot shot--zoom';
+    fig.dataset.spot = spot.id;
     const img = document.createElement('img');
     img.src = src;
     img.alt = 'Foto der Sichtung';
     fig.append(img);
   } else {
+    delete fig.dataset.spot;
     fig.className = 'shot shot--empty';
     const i = document.createElement('img');
     i.className = 'noe';
@@ -319,7 +321,7 @@ export function openModal(id) {
 }
 export function closeModal(id) {
   $(id).hidden = true;
-  if ($('sheet').hidden && $('adminSheet').hidden && $('varSheet').hidden) $('scrim').hidden = true;
+  if ($('sheet').hidden && $('adminSheet').hidden) $('scrim').hidden = true;
 }
 
 /* ── Fotos ───────────────────────────────────────────────────────────────── */
@@ -345,6 +347,38 @@ export function downscale(file, { max = 720, quality = 0.7 } = {}) {
     img.src = url;
   });
 }
+
+/* ── Lightbox ────────────────────────────────────────────────────────────── */
+/* Fuer die grosse Ansicht wird das Seed-Foto in hoeherer Aufloesung neu
+ * erzeugt — die 720px-Fassung aus dem Detail waere auf einem grossen Schirm
+ * sichtbar weich. Bei echten Nutzerfotos gibt es nur die eine gespeicherte
+ * Fassung, photoSrc() liefert die dann unveraendert zurueck. */
+let lastFocus = null;
+
+export function openLightbox(spot) {
+  const box = $('lightbox');
+  const img = $('lightboxImg');
+  const src = photoSrc(spot, 1400);
+  if (!src) return;
+  lastFocus = document.activeElement;
+  img.src = src;
+  img.alt = `Sichtung ${spot.tags.map(store.tagLabel).join(', ') || 'ohne tags'}`;
+  $('lightboxMeta').textContent = fmtCoords(spot.lat, spot.lng);
+  box.hidden = false;
+  $('lightboxClose').focus();
+}
+
+export function closeLightbox() {
+  const box = $('lightbox');
+  if (box.hidden) return false;
+  box.hidden = true;
+  $('lightboxImg').removeAttribute('src');
+  lastFocus?.focus?.();
+  lastFocus = null;
+  return true;
+}
+
+export const lightboxOpen = () => !$('lightbox').hidden;
 
 /* ── Feed / Panel oeffnen ────────────────────────────────────────────────── */
 export const setFeedOpen = (open) => {

@@ -9,7 +9,6 @@ import * as mapmod from './map.js';
 import * as ui from './ui.js';
 import * as share from './share.js';
 import * as search from './search.js';
-import * as variants from './variants.js';
 import { on } from './bus.js';
 import { loadArtwork, cutout, cutoutURL } from './sticker.js';
 import { setArtwork } from './seed.js';
@@ -290,7 +289,6 @@ function wire() {
   $('scrim').addEventListener('click', () => {
     ui.closeSheet();
     ui.closeModal('adminSheet');
-    ui.closeModal('varSheet');
   });
 
   $('tagPick').addEventListener('click', (e) => {
@@ -452,23 +450,24 @@ function wire() {
     if (e.key === 'Enter') doLogin();
   });
 
-  /* Varianten */
-  $('variantBtn').addEventListener('click', () => {
-    variants.prefetchOthers();
-    variants.renderList((n) => {
-      variants.setVariant(n);
-      ui.closeModal('varSheet');
-    });
-    ui.openModal('varSheet');
+  /* Lightbox: Klick aufs Foto im Detail zeigt es gross. */
+  $('panelShot').addEventListener('click', () => {
+    const id = $('panelShot').dataset.spot;
+    const spot = id && store.state.byId.get(id);
+    if (spot) ui.openLightbox(spot);
   });
-  $('varClose').addEventListener('click', () => ui.closeModal('varSheet'));
+  $('lightboxClose').addEventListener('click', () => ui.closeLightbox());
+  /* Klick daneben schliesst, Klick aufs Bild nicht. */
+  $('lightbox').addEventListener('click', (e) => {
+    if (e.target.tagName !== 'IMG') ui.closeLightbox();
+  });
 
   /* Tastatur */
   addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
+    if (ui.closeLightbox()) return; // liegt ganz oben, geht zuerst zu
     if (!$('sheet').hidden) return ui.closeSheet();
     if (!$('adminSheet').hidden) return ui.closeModal('adminSheet');
-    if (!$('varSheet').hidden) return ui.closeModal('varSheet');
     if (crossActive) return closeCross(false);
     if (store.state.selectedId || store.state.imported) {
       store.state.imported = null;
@@ -491,10 +490,13 @@ async function boot() {
     document.body.prepend(bar);
   }
 
-  variants.setVariant(store.state.variant, { persist: false });
-  if (variants.byId(store.state.variant)?.feedFirst) ui.setFeedOpen(true);
   ui.renderTagPicker();
   ui.renderFeed();
+
+  /* Am Desktop ist das Menue eine echte Spalte und startet offen; am Handy
+   * verdeckt es die ganze Karte und startet deshalb zu. Schliessen geht
+   * ueberall — die Spalte klappt dann auf Breite 0. */
+  ui.setFeedOpen(matchMedia('(min-width: 900px)').matches);
 
   if (!window.isSecureContext) {
     const b = $('locBtn');
@@ -523,11 +525,6 @@ async function boot() {
   on('spot:like', (d) => ui.patchLike(d)); // gezielter Patch, KEIN Re-Render
   on('spot:report', (d) => ui.patchReport(d));
   on('feed:tab', () => ui.renderFeed());
-  on('variant', ({ n }) => {
-    mapmod.refreshSizes();
-    /* Galerie startet in der Liste; die anderen auf der Karte. */
-    if (variants.byId(n)?.feedFirst) ui.setFeedOpen(true);
-  });
   on('select', ({ id }) => {
     mapmod.setSelected(id);
     ui.renderDetail(id ? store.state.byId.get(id) : null);

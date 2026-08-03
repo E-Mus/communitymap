@@ -3,9 +3,10 @@
    Palette: NUR Cyan / Magenta / Gelb / Schwarz.
    Weiss und Grau sind ausschliesslich fuer die Karte reserviert.
 
-   Cascade Layers: die Varianten schreiben ausschliesslich in @layer variant.
-   Layer-Reihenfolge schlaegt Spezifitaet, deshalb braucht keine Variante
-   !important und keinen [data-variant="n"]-Praefix vor jedem Selektor.
+   Diese Datei traegt Tokens, Skelett und Komponenten. Der eigentliche Stil
+   liegt in style.css und schreibt ausschliesslich in @layer variant —
+   Layer-Reihenfolge schlaegt Spezifitaet, deshalb braucht er dort weder
+   !important noch aufgeblaehte Selektoren.
    Regel fuer diese Datei: null !important, null ID-Selektoren.
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -80,8 +81,6 @@
     /* TIER 3 — KOMPONENTE. Abgeleitet, Varianten nur bei echten Ausnahmen. */
     --pill-pad: 7px 15px;
     --sticker-px: 46px;
-    --panel-closed: translateY(101%);
-    --feed-closed: translateX(-101%);
     --feed-w: min(88vw, 380px);
     --panel-h: auto;
 
@@ -372,7 +371,9 @@
     flex-direction: column;
     background: var(--ui-bg);
     border-inline-end: var(--bw) solid var(--k);
-    transform: var(--feed-closed);
+    /* Faehrt von links ein. Wert steht direkt statt hinter einem Token —
+       es gibt nur noch einen Stil, die Umleitung braeuchte hier niemand. */
+    transform: translateX(-101%);
     transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
     inline-size: var(--feed-w);
     max-inline-size: 100%;
@@ -536,7 +537,8 @@
     z-index: 9;
     background: var(--ui-bg);
     border: var(--bw) solid var(--k);
-    transform: var(--panel-closed);
+    /* Faehrt von unten ein — auf dem Desktop sitzt es unten rechts. */
+    transform: translateY(101%);
     transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
     display: flex;
     flex-direction: column;
@@ -692,23 +694,56 @@
   }
   .photo__prev .iconbtn { position: absolute; inset-block-start: 8px; inset-inline-end: 8px; }
 
-  .varlist { display: grid; gap: 8px; }
-  .varlist button {
-    inline-size: 100%;
-    text-align: start;
-    padding: 12px 14px;
-    border: var(--bw) solid var(--k);
+
+  /* ── Lightbox ─────────────────────────────────────────────────────────── */
+  /* Hier ist der Grund SOLIDES Schwarz und kein Linienraster: das Raster
+     würde sich mit dem Halbton der Fotos zu Moiré überlagern. Reines
+     Schwarz ist ausserdem der richtige Grund, um ein Bild zu betrachten. */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: var(--k);
     display: grid;
-    gap: 3px;
+    place-items: center;
+    padding: clamp(12px, 4vw, 40px);
+    padding-block-start: calc(clamp(12px, 4vw, 40px) + var(--safe-t));
+    padding-block-end: calc(clamp(12px, 4vw, 40px) + var(--safe-b));
+    animation: fade-in 0.18s ease;
   }
-  .varlist button[aria-current="true"] { background: var(--y); }
-  .varlist strong {
-    font-family: var(--font-ui);
-    font-weight: var(--ui-weight);
-    text-transform: var(--ui-case);
-    letter-spacing: var(--ui-track);
+  .lightbox img {
+    max-inline-size: 100%;
+    max-block-size: 100%;
+    inline-size: auto;
+    block-size: auto;
+    object-fit: contain;
+    border: var(--bw) solid var(--y);
   }
-  .varlist small { font-family: var(--font-mono); font-size: 10px; opacity: 0.65; }
+  .lightbox__close {
+    position: absolute;
+    inset-block-start: calc(14px + var(--safe-t));
+    inset-inline-end: 14px;
+    background: var(--y);
+  }
+  .lightbox__meta {
+    position: absolute;
+    inset-block-end: calc(14px + var(--safe-b));
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+    background: var(--y);
+    padding: 6px 14px;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    white-space: nowrap;
+    max-inline-size: calc(100% - 28px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Das Foto im Detail ist anklickbar — das muss man sehen. */
+  .shot--zoom { cursor: zoom-in; }
+  .shot--zoom img { transition: transform 0.2s ease; }
+  .shot--zoom:hover img { transform: scale(1.02); }
 
   /* ── Toast / Fatal ────────────────────────────────────────────────────── */
   .toast {
@@ -876,6 +911,10 @@
   @keyframes toast-in {
     from { transform: translate(-50%, 120%); }
     to { transform: translate(-50%, 0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 }
 

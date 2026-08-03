@@ -318,8 +318,16 @@ export function showImported(spot) {
 /* ── Slap ────────────────────────────────────────────────────────────────── */
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/* Zwei gezeichnete Frames abwarten — aber niemals daran haengen bleiben.
+ * requestAnimationFrame wird in Hintergrund-Tabs gedrosselt oder ganz
+ * angehalten; ohne den Timeout wuerde slap() dort nie aufloesen, und der
+ * Nutzer bekaeme weder den Toast noch die Rueckgaengig-Aktion. */
 const twoFrames = () =>
-  new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  Promise.race([
+    new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
+    wait(400),
+  ]);
 
 /**
  * Der Sticker knallt auf die Karte und wird dann an den Symbol-Layer uebergeben.

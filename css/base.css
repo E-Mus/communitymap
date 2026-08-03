@@ -79,7 +79,27 @@
     --cl-3: var(--m);   --cl-3-ink: var(--y);   /* >= 50  */
 
     /* TIER 3 — KOMPONENTE. Abgeleitet, Varianten nur bei echten Ausnahmen. */
-    --pill-pad: 7px 15px;
+
+    /* Bedienelemente: GENAU DREI Hoehen, jede mit einer klaren Rolle.
+       Vorher hatte jedes Element seine eigene — Icon-Buttons mal 40, mal 46,
+       Chips 30, Suchfeld 38 — und in derselben Zeile stiessen 40 und 46
+       aneinander. Wer eine neue Schaltflaeche baut, nimmt eine davon.
+
+         --ctl-s   Chips in Reihen: Reiter, Tags, Like
+         --ctl     Standard: alle Icon-Buttons, Suchfeld, schwebender CTA
+         --ctl-lg  Primaeraktion ueber die volle Breite
+
+       44px ist bewusst gewaehlt: darunter liegt die uebliche Untergrenze
+       fuer Tippziele (Apple 44pt, Material 48dp). */
+    --ctl-s: 36px;
+    --ctl: 44px;
+    --ctl-lg: 52px;
+
+    /* Symbolgroesse in Icon-Buttons — vorher 15px hier, 18px dort. */
+    --ctl-icon: 16px;
+
+    /* Nur noch waagerecht: die Hoehe kommt aus der Skala oben. */
+    --pill-pad-x: 15px;
     --sticker-px: 46px;
     --feed-w: min(88vw, 380px);
     --panel-h: auto;
@@ -227,12 +247,19 @@
   }
   .mapfail__msg span { font-family: var(--font-ui); font-size: var(--step-0); }
 
-  /* ── Pills ────────────────────────────────────────────────────────────── */
-  .pill {
+  /* ── Chips: Pills, Reiter, Like, Tag-Liste ────────────────────────────── */
+  /* Alle vier teilen sich Hoehe, Rundung, Rahmen und Schrift. Was sie
+     unterscheidet, ist ausschliesslich die Fuellung. */
+  .pill,
+  .tab,
+  .like,
+  .taglist li {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    padding: var(--pill-pad);
+    block-size: var(--ctl-s);
+    padding: 0 var(--pill-pad-x);
     border-radius: var(--radius);
     border: var(--bw) solid var(--k);
     background: var(--ui-card);
@@ -244,6 +271,7 @@
     font-size: var(--step--1);
     line-height: 1;
     white-space: nowrap;
+    flex: none;
   }
   .pill--y { background: var(--y); }
   .pill--c { background: var(--c); }
@@ -266,16 +294,19 @@
   }
   .linkbtn--del { color: var(--m); }
 
+  /* Jeder Icon-Button ist gleich gross — egal ob ☰, ◎ oder ✕, und egal in
+     welchem Overlay er sitzt. */
   .iconbtn {
-    inline-size: 40px;
-    block-size: 40px;
+    inline-size: var(--ctl);
+    block-size: var(--ctl);
     display: grid;
     place-items: center;
     border-radius: var(--radius);
     border: var(--bw) solid var(--k);
     background: var(--ui-card);
-    font-size: 15px;
+    font-size: var(--ctl-icon);
     line-height: 1;
+    padding: 0;
     flex: none;
   }
 
@@ -297,17 +328,18 @@
   /* Bei offenem Menue hat der Menue-Button nichts mehr zu tun — dann weg
      damit, statt einen wirkungslosen Knopf stehen zu lassen. */
   .app[data-feed="open"] .hud__menu { display: none; }
-  .hud__menu { display: grid; gap: 3px; align-content: center; padding: 0 10px; }
-  .hud__menu span { display: block; inline-size: 16px; block-size: 2px; background: var(--k); }
-  .hud__loc { font-size: 18px; }
+  .hud__menu { gap: 4px; align-content: center; }
+  .hud__menu span { display: block; inline-size: 18px; block-size: 2px; background: var(--k); }
   .hud__loc[disabled] { opacity: 0.35; }
 
   .cta {
     margin-inline-start: auto;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    padding: 11px 20px;
+    block-size: var(--ctl); /* gleiche Hoehe wie die Icon-Buttons daneben */
+    padding: 0 20px;
     border-radius: var(--radius);
     border: var(--bw) solid var(--k);
     background: var(--y);
@@ -318,9 +350,12 @@
     letter-spacing: var(--ui-track);
     font-size: var(--step-0);
     line-height: 1;
+    flex: none;
   }
   .cta__mark { inline-size: 20px; block-size: 20px; vertical-align: 0; }
-  .cta--wide { inline-size: 100%; justify-content: center; margin: 0; padding: 15px; }
+  /* Die eine Primaeraktion pro Sheet darf hoeher sein — das ist Hierarchie,
+     keine Willkuer. */
+  .cta--wide { inline-size: 100%; block-size: var(--ctl-lg); margin: 0; }
   .cta[aria-pressed="true"] { background: var(--m); color: var(--y); }
 
   /* ── Fadenkreuz ───────────────────────────────────────────────────────── */
@@ -408,7 +443,8 @@
   .search { padding: var(--pad); border-block-end: var(--bw) solid var(--k); position: relative; }
   .search__input {
     inline-size: 100%;
-    padding: 10px 14px;
+    block-size: var(--ctl);
+    padding: 0 var(--pill-pad-x);
     border: var(--bw) solid var(--k);
     border-radius: var(--radius);
     font-family: var(--font-mono);
@@ -441,17 +477,7 @@
     flex-wrap: wrap;
     border-block-end: var(--bw) solid var(--k);
   }
-  .tab {
-    padding: var(--pill-pad);
-    border: var(--bw) solid var(--k);
-    border-radius: var(--radius);
-    font-family: var(--font-ui);
-    font-weight: var(--ui-weight);
-    text-transform: var(--ui-case);
-    letter-spacing: var(--ui-track);
-    font-size: var(--step--1);
-    line-height: 1;
-  }
+  /* Groesse, Rundung, Rahmen und Schrift kommen aus dem Chip-Block oben. */
   .tab[aria-selected="true"] { background: var(--k); color: var(--y); }
   .tab--admin[aria-selected="true"] { background: var(--m); color: var(--y); }
 
@@ -502,17 +528,12 @@
   .card__co { font-family: var(--font-mono); font-size: 10px; opacity: 0.65; margin-block-start: 3px; }
   .card__flag { font-family: var(--font-mono); font-size: 10px; color: var(--m); margin-block-start: 3px; }
 
+  /* Wie die anderen Chips, nur mit Ziffern in Mono — sonst springt die
+     Zahl beim Hochzaehlen in der Breite. */
   .like {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: var(--pill-pad);
-    border: var(--bw) solid var(--k);
-    border-radius: var(--radius);
-    background: var(--ui-card);
     font-family: var(--font-mono);
-    font-size: var(--step--1);
-    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    gap: 5px;
   }
   .like[data-on] { background: var(--m); color: var(--y); border-color: var(--k); }
   .like__heart { font-size: 1.05em; }
@@ -603,17 +624,6 @@
   }
   .coords--sheet { display: block; padding: 0 var(--pad); opacity: 0.7; }
   .taglist { display: flex; flex-wrap: wrap; gap: 6px; }
-  .taglist li {
-    padding: 5px 12px;
-    border: var(--bw) solid var(--k);
-    border-radius: var(--radius);
-    font-family: var(--font-ui);
-    font-weight: var(--ui-weight);
-    text-transform: var(--ui-case);
-    letter-spacing: var(--ui-track);
-    font-size: var(--step--1);
-    line-height: 1;
-  }
   .panel__acts {
     display: flex;
     gap: 16px;

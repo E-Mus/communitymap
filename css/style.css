@@ -128,9 +128,9 @@
   .tab[aria-selected='true'] { background: var(--y); color: var(--k); }
   .tab--admin[aria-selected='true'] { background: var(--y); color: var(--k); }
 
-  /* Ungeliked neutral, geliked gelb — so ist der Zustand die Farbe und nicht
-     der Knopf an sich. */
-  .like { background: var(--ui-card); color: var(--k); }
+  /* Der Herzknopf ist und bleibt magenta — das ist das Rot der Palette.
+     Geliked wechselt nur die Fuellung auf Gelb, vorher war das Schwarz. */
+  .like { background: var(--m); color: var(--y); }
   .like[data-on] { background: var(--y); color: var(--k); }
 
   .pill[aria-pressed='true'] { background: var(--y); color: var(--k); }
@@ -202,7 +202,6 @@
     }
     .brand { font-size: 2.1rem; }
     .brand__mark { inline-size: 40px; block-size: 40px; }
-    .feed__close { inline-size: 46px; block-size: 46px; }
     .cards { padding-block: 16px; }
   }
 

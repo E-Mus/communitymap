@@ -80,20 +80,16 @@
 
     /* TIER 3 — KOMPONENTE. Abgeleitet, Varianten nur bei echten Ausnahmen. */
 
-    /* Bedienelemente: GENAU DREI Hoehen, jede mit einer klaren Rolle.
-       Vorher hatte jedes Element seine eigene — Icon-Buttons mal 40, mal 46,
-       Chips 30, Suchfeld 38 — und in derselben Zeile stiessen 40 und 46
-       aneinander. Wer eine neue Schaltflaeche baut, nimmt eine davon.
+    /* Bedienelemente: EINE Hoehe. Alles, was man antippen kann — Buttons,
+       Chips, Reiter, Tags, Likes, Suchfeld, CTA — ist 44px hoch.
 
-         --ctl-s   Chips in Reihen: Reiter, Tags, Like
-         --ctl     Standard: alle Icon-Buttons, Suchfeld, schwebender CTA
-         --ctl-lg  Primaeraktion ueber die volle Breite
-
-       44px ist bewusst gewaehlt: darunter liegt die uebliche Untergrenze
-       fuer Tippziele (Apple 44pt, Material 48dp). */
-    --ctl-s: 36px;
+       44 ist keine willkuerliche Zahl, sondern die uebliche Untergrenze fuer
+       Tippziele (Apple 44pt, Material 48dp). Ein Chip auf 36 zu setzen spart
+       ein bisschen Hoehe und unterschreitet dafuer genau die Grenze, wegen
+       der es die Zahl gibt. Eine einzige Groesse ist ausserdem das, was
+       "einheitlich" ueberhaupt bedeutet: wer etwas Neues baut, muss nicht
+       entscheiden, welche Stufe passt. */
     --ctl: 44px;
-    --ctl-lg: 52px;
 
     /* Symbolgroesse in Icon-Buttons — vorher 15px hier, 18px dort. */
     --ctl-icon: 16px;
@@ -258,7 +254,7 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    block-size: var(--ctl-s);
+    block-size: var(--ctl);
     padding: 0 var(--pill-pad-x);
     border-radius: var(--radius);
     border: var(--bw) solid var(--k);
@@ -353,9 +349,9 @@
     flex: none;
   }
   .cta__mark { inline-size: 20px; block-size: 20px; vertical-align: 0; }
-  /* Die eine Primaeraktion pro Sheet darf hoeher sein — das ist Hierarchie,
-     keine Willkuer. */
-  .cta--wide { inline-size: 100%; block-size: var(--ctl-lg); margin: 0; }
+  /* Die Primaeraktion hebt sich ueber die volle Breite ab, nicht ueber eine
+     Sondergroesse. */
+  .cta--wide { inline-size: 100%; margin: 0; }
   .cta[aria-pressed="true"] { background: var(--m); color: var(--y); }
 
   /* ── Fadenkreuz ───────────────────────────────────────────────────────── */
@@ -762,57 +758,96 @@
   .shot--zoom:hover img { transform: scale(1.02); }
 
   /* ── Toast / Fatal ────────────────────────────────────────────────────── */
+  /* ── Meldungen ────────────────────────────────────────────────────────── */
+  /* Sprechen dieselbe Sprache wie die Bedienelemente: Pillform, schwarze
+     Kontur, dieselbe Schrift, und die Aktion darin ist eine echte Pille auf
+     Standardhoehe — kein unterstrichener Text, den man kaum trifft.
+     Schrift ist gelb auf schwarz, nicht weiss: Weiss gehoert der Karte. */
+  .toast,
+  .fatal {
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px;
+    padding-inline-start: 18px;
+    border: var(--bw) solid var(--k);
+    border-radius: var(--radius);
+    background: var(--k);
+    color: var(--y);
+    font-family: var(--font-ui);
+    font-weight: var(--ui-weight);
+    font-variation-settings: var(--ui-vf);
+    text-transform: var(--ui-case);
+    letter-spacing: var(--ui-track);
+    font-size: var(--step--1);
+    line-height: 1.3;
+  }
+
   .toast {
     position: fixed;
     inset-block-end: calc(16px + var(--safe-b));
     inset-inline-start: 50%;
     transform: translateX(-50%);
-    z-index: 40;
+    inline-size: max-content;
     max-inline-size: min(92vw, 460px);
-    background: var(--k);
-    color: var(--paper);
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    font-size: var(--step--1);
     animation: toast-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1);
   }
-  .toast button {
+  .toast--warn { background: var(--m); }
+
+  /* Die Aktion ist eine gelbe Pille auf Standardhoehe. */
+  .toast button,
+  .fatal button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    block-size: var(--ctl);
+    padding: 0 var(--pill-pad-x);
+    border-radius: var(--radius);
+    border: var(--bw) solid var(--k);
+    background: var(--y);
+    color: var(--k);
     font-family: var(--font-ui);
     font-weight: var(--ui-weight);
+    font-variation-settings: var(--ui-vf);
     text-transform: var(--ui-case);
     letter-spacing: var(--ui-track);
-    color: var(--y);
-    text-decoration: underline;
-    text-underline-offset: 3px;
+    font-size: var(--step--1);
+    line-height: 1;
     white-space: nowrap;
+    flex: none;
   }
-  .toast--warn { background: var(--m); color: var(--y); }
 
   .fatal {
     position: fixed;
-    inset-block-start: 0;
-    inset-inline: 0;
+    inset-block-start: calc(12px + var(--safe-t));
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+    inline-size: max-content;
+    max-inline-size: min(92vw, 460px);
     z-index: 99;
-    background: var(--k);
-    color: var(--paper);
-    padding: 12px 16px;
-    text-align: center;
-    font-size: var(--step--1);
   }
-  .fatal button { color: var(--y); text-decoration: underline; }
 
+  /* Der Dauerhinweis oben ist bewusst KEINE Pille — er schwebt nicht, er
+     gehoert zum Seitenrand. Schrift und Kontur bleiben trotzdem dieselben. */
   .volatile {
     position: fixed;
     inset-block-start: 0;
     inset-inline: 0;
     z-index: 50;
-    background: var(--c);
-    padding: 6px 12px;
+    background: var(--y);
+    color: var(--k);
+    border-block-end: var(--bw) solid var(--k);
+    padding: 8px 14px;
     text-align: center;
-    font-family: var(--font-mono);
-    font-size: 10px;
+    font-family: var(--font-ui);
+    font-weight: var(--ui-weight);
+    font-variation-settings: var(--ui-vf);
+    text-transform: var(--ui-case);
+    letter-spacing: var(--ui-track);
+    font-size: var(--step--1);
+    line-height: 1.3;
   }
 
   /* ── Marker-Overlay + Slap ────────────────────────────────────────────── */
